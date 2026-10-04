@@ -18,6 +18,8 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    // 讀取上面產生的 /openapi/v1.json，顯示成可以直接試打 API 的網頁
+    app.UseSwaggerUI(options => options.SwaggerEndpoint("/openapi/v1.json", "v1"));
 }
 
 app.UseHttpsRedirection();
