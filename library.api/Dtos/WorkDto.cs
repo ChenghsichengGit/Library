@@ -12,6 +12,7 @@ public record WorkDto(
     DateOnly? ReleaseDate,
     int Score,
     bool Favorite,
+    bool Purchased,
     DateTime CreatedAt)
 {
     public static WorkDto From(Work w) =>
@@ -25,5 +26,6 @@ public record WorkDto(
             w.ReleaseDate,
             w.Score,
             w.Favorite,
+            w.Purchased,
             w.CreatedAt);
 }

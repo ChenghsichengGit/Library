@@ -32,6 +32,7 @@ public class Work
     public DateOnly? ReleaseDate { get; set; }
     public int Score { get; set; }
     public bool Favorite { get; set; }
+    public bool Purchased {get; set; }
     
     public DateTime CreatedAt { get; set; }
     public DateTime? DeletedAt { get; set; }
