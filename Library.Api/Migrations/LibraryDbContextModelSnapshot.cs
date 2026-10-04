@@ -3,20 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using library.api.Data;
+using Library.Api.Data;
 
 #nullable disable
 
-namespace library.api.Migrations
+namespace Library.Api.Migrations
 {
     [DbContext(typeof(LibraryDbContext))]
-    [Migration("20261004053655_InitialCreate")]
-    partial class InitialCreate
+    partial class LibraryDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -25,7 +22,7 @@ namespace library.api.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("library.api.Entities.Work", b =>
+            modelBuilder.Entity("Library.Api.Entities.Work", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -40,6 +37,9 @@ namespace library.api.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<bool>("Favorite")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("Purchased")
                         .HasColumnType("bit");
 
                     b.Property<DateOnly?>("ReleaseDate")

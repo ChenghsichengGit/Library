@@ -1,6 +1,6 @@
-﻿using library.api.Entities;
+﻿using Library.Api.Entities;
 
-namespace library.api.Dtos;
+namespace Library.Api.Dtos;
 
 public record WorkDto(
     int Id,

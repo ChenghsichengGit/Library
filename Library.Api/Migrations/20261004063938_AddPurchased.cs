@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace library.api.Migrations
+namespace Library.Api.Migrations
 {
     /// <inheritdoc />
     public partial class AddPurchased : Migration

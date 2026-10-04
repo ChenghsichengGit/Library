@@ -1,5 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
-namespace library.api.Entities;
+namespace Library.Api.Entities;
 
 public class Work
 {

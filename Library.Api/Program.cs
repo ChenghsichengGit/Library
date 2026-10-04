@@ -1,4 +1,4 @@
-using library.api.Data;
+using Library.Api.Data;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);

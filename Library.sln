@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "library.api", "library.api\library.api.csproj", "{E520302B-798C-4835-82C5-E599F339BE06}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Library.Api", "Library.Api\Library.Api.csproj", "{E520302B-798C-4835-82C5-E599F339BE06}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

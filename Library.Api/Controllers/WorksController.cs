@@ -1,10 +1,10 @@
-﻿using library.api.Data;
-using library.api.Dtos;
-using library.api.Entities;
+﻿using Library.Api.Data;
+using Library.Api.Dtos;
+using Library.Api.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace library.api.Controllers;
+namespace Library.Api.Controllers;
 
 [ApiController]
 [Route("api/works")]
