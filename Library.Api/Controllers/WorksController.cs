@@ -1,8 +1,7 @@
 ﻿using Library.Application.Dtos;
+using Library.Application.Services;
 using Library.Domain.Entities;
-using Library.Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Library.Api.Controllers;
 
@@ -10,88 +9,49 @@ namespace Library.Api.Controllers;
 [Route("api/works")]
 public class WorksController : ControllerBase
 {
-    private readonly LibraryDbContext _db;
+    private readonly WorkService _works;
 
-    public WorksController(LibraryDbContext db)
+    public WorksController(WorkService works)
     {
-        _db = db;
+        _works = works;
     }
-
+    
     [HttpGet]
     public async Task<ActionResult<List<WorkDto>>> GetAll()
     {
-        var works = await _db.Works
-            .AsNoTracking()
-            .ToListAsync();
-
-        return works.Select(WorkDto.From).ToList();
+        return await _works.GetWorksAsync();
     }
 
     [HttpGet("{id:int}")]
     public async Task<ActionResult<WorkDto>> Get(int id)
     {
-        var work = await _db.Works
-            .AsNoTracking()
-            .FirstOrDefaultAsync(w => w.Id == id);
-
-        if (work is null)
-            return NotFound();
-
-        return WorkDto.From(work);
+        var work = await _works.GetByIdAsync(id);
+        return work is null ? NotFound() : work;
     }
     
     [HttpPost]
     public async Task<ActionResult<WorkDto>> Create(SaveWorkRequest request)
     {
-        var work = new Work
-        {
-            TitleZh = request.TitleZh?.Trim() ?? "",
-            TitleJa = request.TitleJa?.Trim() ?? "",
-            TitleEn = request.TitleEn?.Trim() ?? "",
-            Remark = request.Remark?.Trim() ?? "",
-            ReleaseDate = request.ReleaseDate,
-            Score = request.Score ?? 0,
-            Favorite = request.Favorite ?? false,
-            Purchased = request.Purchased ?? false,
-            CreatedAt = DateTime.UtcNow
-        };
-
-        _db.Works.Add(work);
-        await _db.SaveChangesAsync();
-        
-        return CreatedAtAction(nameof(Get), new { id = work.Id }, WorkDto.From(work));
+        var work = await _works.CreateAsync(request);
+        return CreatedAtAction(nameof(Get), new { id = work.Id }, work);
     }
     
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id,SaveWorkRequest request)
-    {
-        var work = await _db.Works.FirstOrDefaultAsync(w => w.Id == id);
-        if(work is null)
-            return NotFound();
+    {   
+        var success = await _works.UpdateAsync(id, request);
         
-        work.TitleZh = request.TitleZh?.Trim() ?? "";
-        work.TitleJa = request.TitleJa?.Trim() ?? "";
-        work.TitleEn = request.TitleEn?.Trim() ?? "";
-        work.Remark = request.Remark?.Trim() ?? "";
-        work.ReleaseDate = request.ReleaseDate ?? null;
-        work.Score = request.Score ?? 0;
-        work.Favorite = request.Favorite ?? false;
-        work.Purchased = request.Purchased ?? false;
-        
-        await _db.SaveChangesAsync();
-        return NoContent();
+        if(success)  return NoContent();
+        return NotFound();
     }
 
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var work = await _db.Works.FirstOrDefaultAsync(w => w.Id == id);
-        if (work is null)
-            return NotFound();
-        work.DeletedAt = DateTime.UtcNow;
+        var success = await _works.DeleteAsync(id);
 
-        await _db.SaveChangesAsync();
-        return NoContent();
+        if(success)  return NoContent();
+        return NotFound();
     }
     
 }

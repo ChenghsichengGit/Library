@@ -1,3 +1,5 @@
+using Library.Application.Abstractions;
+using Library.Application.Services;
 using Library.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,6 +13,10 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddDbContext<LibraryDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+
+// 有人要 ILibraryDbContext 時，給他「這個請求的那個 LibraryDbContext」，確保同一個請求用的是同一個實例
+builder.Services.AddScoped<ILibraryDbContext>(sp => sp.GetRequiredService<LibraryDbContext>());
+builder.Services.AddScoped<WorkService>();
 
 var app = builder.Build();
 
