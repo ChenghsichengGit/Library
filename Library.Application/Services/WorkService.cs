@@ -8,10 +8,12 @@ namespace Library.Application.Services;
 public class WorkService
 {
     private readonly ILibraryDbContext _db;
+    private readonly TimeProvider _time;
     
-    public WorkService(ILibraryDbContext db)
+    public WorkService(ILibraryDbContext db,  TimeProvider time)
     {
         _db = db;
+        _time = time;
     }
 
     public async Task<List<WorkDto>> GetWorksAsync()
@@ -47,7 +49,7 @@ public class WorkService
             Score = request.Score ?? 0,
             Favorite = request.Favorite ?? false,
             Purchased = request.Purchased ?? false,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = _time.GetUtcNow().UtcDateTime
         };
 
         _db.Works.Add(work);
@@ -80,7 +82,7 @@ public class WorkService
         var work = await _db.Works.FirstOrDefaultAsync(w => w.Id == id);
         if (work is null)
             return false;
-        work.DeletedAt = DateTime.UtcNow;
+        work.DeletedAt = _time.GetUtcNow().UtcDateTime;
 
         await _db.SaveChangesAsync();
         return true;

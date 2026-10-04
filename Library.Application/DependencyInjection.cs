@@ -9,6 +9,7 @@ public static class DependencyInjection
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
         services.AddScoped<WorkService>();
+        services.AddSingleton(TimeProvider.System);
         return services;
     }
 }
