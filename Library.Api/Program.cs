@@ -1,7 +1,5 @@
-using Library.Application.Abstractions;
-using Library.Application.Services;
-using Library.Infrastructure.Data;
-using Microsoft.EntityFrameworkCore;
+using Library.Application;
+using Library.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,12 +9,8 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-builder.Services.AddDbContext<LibraryDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
-
-// 有人要 ILibraryDbContext 時，給他「這個請求的那個 LibraryDbContext」，確保同一個請求用的是同一個實例
-builder.Services.AddScoped<ILibraryDbContext>(sp => sp.GetRequiredService<LibraryDbContext>());
-builder.Services.AddScoped<WorkService>();
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
 
