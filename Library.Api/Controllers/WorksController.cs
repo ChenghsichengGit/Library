@@ -1,6 +1,6 @@
-﻿using Library.Api.Data;
-using Library.Api.Dtos;
-using Library.Api.Entities;
+﻿using Library.Application.Dtos;
+using Library.Domain.Entities;
+using Library.Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 

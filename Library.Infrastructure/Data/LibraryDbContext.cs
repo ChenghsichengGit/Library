@@ -1,7 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Library.Api.Entities;
+﻿using Library.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 
-namespace Library.Api.Data;
+namespace Library.Infrastructure.Data;
 
 public class LibraryDbContext : DbContext
 {

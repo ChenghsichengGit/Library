@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Library.Api.Dtos;
+namespace Library.Application.Dtos;
 
 public class SaveWorkRequest : IValidatableObject
 {
