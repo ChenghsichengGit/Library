@@ -39,18 +39,9 @@ public class WorkService
 
     public async Task<WorkDto> CreateAsync(SaveWorkRequest request)
     {
-        var work = new Work
-        {
-            TitleZh = request.TitleZh?.Trim() ?? "",
-            TitleJa = request.TitleJa?.Trim() ?? "",
-            TitleEn = request.TitleEn?.Trim() ?? "",
-            Remark = request.Remark?.Trim() ?? "",
-            ReleaseDate = request.ReleaseDate,
-            Score = request.Score ?? 0,
-            Favorite = request.Favorite ?? false,
-            Purchased = request.Purchased ?? false,
-            CreatedAt = _time.GetUtcNow().UtcDateTime
-        };
+        var work = new Work();
+        Apply(work, request);
+        work.CreatedAt = _time.GetUtcNow().UtcDateTime;
 
         _db.Works.Add(work);
         await _db.SaveChangesAsync();
@@ -64,14 +55,7 @@ public class WorkService
         if (work is null)
             return false;
         
-        work.TitleZh = request.TitleZh?.Trim() ?? "";
-        work.TitleJa = request.TitleJa?.Trim() ?? "";
-        work.TitleEn = request.TitleEn?.Trim() ?? "";
-        work.Remark = request.Remark?.Trim() ?? "";
-        work.ReleaseDate = request.ReleaseDate ?? null;
-        work.Score = request.Score ?? 0;
-        work.Favorite = request.Favorite ?? false;
-        work.Purchased = request.Purchased ?? false;
+        Apply(work, request);
         
         await _db.SaveChangesAsync();
         return true;
@@ -86,5 +70,17 @@ public class WorkService
 
         await _db.SaveChangesAsync();
         return true;
+    }
+
+    private static void Apply(Work work, SaveWorkRequest request)
+    {
+        work.TitleZh = request.TitleZh?.Trim() ?? "";
+        work.TitleJa = request.TitleJa?.Trim() ?? "";
+        work.TitleEn = request.TitleEn?.Trim() ?? "";
+        work.Remark = request.Remark?.Trim() ?? "";
+        work.ReleaseDate = request.ReleaseDate ?? null;
+        work.Score = request.Score ?? 0;
+        work.Favorite = request.Favorite ?? false;
+        work.Purchased = request.Purchased ?? false;
     }
 }

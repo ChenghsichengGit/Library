@@ -127,4 +127,47 @@ public class WorkServiceTests : IAsyncLifetime
         Assert.NotNull(result);
         Assert.Equal(new DateTime(2026, 1, 2, 12, 0, 0), result.DeletedAt);
     }
+    
+    [Fact]
+    public async Task UpdateAsync_ReplacesAllFields_AndKeepsCreatedAt()
+    {
+        // 第 1 段：新增一筆「有日文名稱、有上架日期、評分 5」的作品，記下 id
+        await using var db = CreateDbContext();
+        var service = CreateService(db);
+        var dto = await service.CreateAsync(new SaveWorkRequest
+        {
+            TitleJa = "テスト",
+            ReleaseDate = new DateOnly(2025, 10, 10),
+            Score = 5
+        });
+
+        var id = dto.Id;
+        // 讓時間往前走一天（這樣如果建立時間被改掉，就會變成 01-02，測試抓得到）
+        _time.Advance(TimeSpan.FromDays(1));
+
+        // 第 2 段：修改成「只有英文名稱、沒有上架日期、評分 3」，檢查回傳 true
+        var titleEn = "TEST";
+        await using var db1 = CreateDbContext();
+        var service1 = CreateService(db1);
+        await service1.UpdateAsync(id, new SaveWorkRequest
+        {
+            TitleEn = titleEn,
+            Score = 3
+        });
+
+        // 第 3 段：用新的 DbContext 讀出來，檢查：
+        //   - TitleJa 變成 ""（被清掉了）
+        //   - TitleEn 是新的值
+        //   - ReleaseDate 是 null（被清掉了）
+        //   - Score 是 3
+        //   - CreatedAt 還是 2026-01-01 12:00（沒被改掉）
+        await using var db2 = CreateDbContext();
+        var result = await db2.Works.SingleAsync(w => w.Id == id);
+        
+        Assert.Empty(result.TitleJa);
+        Assert.Equal(titleEn, result.TitleEn);
+        Assert.Null(result.ReleaseDate);
+        Assert.Equal(3, result.Score);
+        Assert.Equal(new DateTime(2026, 1, 1, 12, 0, 0), result.CreatedAt);
+    }
 }
