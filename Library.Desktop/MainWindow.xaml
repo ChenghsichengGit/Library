@@ -9,9 +9,31 @@
     <DockPanel Margin="8">
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
             <Button Content="重新載入" Command="{Binding LoadCommand}" Padding="12,4" />
+            <Button Content="新增" Command="{Binding NewCommand}" Padding="12,4" Margin="8,0,0,0" />
             <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center" Margin="12,0,0,0" />
         </StackPanel>
 
-        <DataGrid ItemsSource="{Binding Works}" IsReadOnly="True" />
+        <StackPanel DockPanel.Dock="Right" Width="260" Margin="8,0,0,0">
+            <TextBlock Text="中文名稱" />
+            <TextBox Text="{Binding TitleZh, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" />
+            <TextBlock Text="日文名稱" />
+            <TextBox Text="{Binding TitleJa, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" />
+            <TextBlock Text="英文名稱" />
+            <TextBox Text="{Binding TitleEn, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" />
+            <TextBlock Text="上架日期" />
+            <DatePicker SelectedDate="{Binding ReleaseDate}" Margin="0,2,0,8" />
+            <TextBlock Text="評分（6 是王冠）" />
+            <ComboBox ItemsSource="{Binding ScoreOptions}" SelectedItem="{Binding Score}" Margin="0,2,0,8" />
+            <CheckBox Content="最愛" IsChecked="{Binding Favorite}" Margin="0,0,0,4" />
+            <CheckBox Content="已購買" IsChecked="{Binding Purchased}" Margin="0,0,0,8" />
+            <TextBlock Text="備註" />
+            <TextBox Text="{Binding Remark, UpdateSourceTrigger=PropertyChanged}"
+                     Height="60" TextWrapping="Wrap" AcceptsReturn="True" Margin="0,2,0,8" />
+            <Button Content="儲存" Command="{Binding SaveCommand}" Padding="12,4" />
+            <Button Content="刪除" Command="{Binding DeleteCommand}" Padding="12,4" Margin="0,8,0,0" />
+            <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" TextWrapping="Wrap" Margin="0,8,0,0" />
+        </StackPanel>
+
+        <DataGrid ItemsSource="{Binding Works}" SelectedItem="{Binding SelectedWork}" IsReadOnly="True" />
     </DockPanel>
 </Window>

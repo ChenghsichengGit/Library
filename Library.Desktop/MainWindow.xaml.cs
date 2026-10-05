@@ -10,7 +10,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        var viewModel = new MainViewModel(new WorksApiClient());
+        var viewModel = new MainViewModel(new WorksApiClient(), new MessageBoxDialogService());
         DataContext = viewModel;
 
         // 視窗打開時自動載入一次，不用先按按鈕
