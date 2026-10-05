@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 取得程式碼
+        uses: actions/checkout@v5
+
+      - name: 安裝 .NET SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: 還原套件
+        run: dotnet restore
+
+      - name: 建置
+        run: dotnet build --no-restore --configuration Release
+
+      - name: 測試
+        run: dotnet test --no-build --configuration Release
