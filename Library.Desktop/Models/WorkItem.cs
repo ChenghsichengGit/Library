@@ -10,5 +10,6 @@ public record WorkItem(
     string Remark,
     int Score,
     bool Favorite,
+    bool Purchased,
     DateOnly? ReleaseDate,
     DateTime CreatedAt);
