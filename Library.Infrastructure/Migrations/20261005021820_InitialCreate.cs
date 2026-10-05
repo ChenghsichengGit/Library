@@ -24,6 +24,7 @@ namespace Library.Infrastructure.Migrations
                     ReleaseDate = table.Column<DateOnly>(type: "date", nullable: true),
                     Score = table.Column<int>(type: "int", nullable: false),
                     Favorite = table.Column<bool>(type: "bit", nullable: false),
+                    Purchased = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
