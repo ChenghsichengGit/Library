@@ -1,17 +1,18 @@
 ﻿using Library.Application.Dtos;
 using Library.Application.Services;
 using Library.Infrastructure.Data;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Time.Testing;
 
 namespace Library.IntegrationTests;
 
+[Collection("SqlServer")]
 public class WorkServiceTests : IAsyncLifetime
 {
-    // 每個測試各用一個隨機命名的資料庫，測試之間不會互相影響
-    private readonly string _connectionString =
-        $"Server=(localdb)\\MSSQLLocalDB;Database=LibraryTest_{Guid.NewGuid():N};Trusted_Connection=True;";
 
+    // 每個測試各用一個隨機命名的資料庫，測試之間不會互相影響
+    private readonly string _connectionString;
     // 假時鐘固定在 2026-01-01 12:00 UTC，時間相關的斷言才能精確比對
     private readonly FakeTimeProvider _time = new(new DateTimeOffset(2026, 1, 1, 12, 0, 0, TimeSpan.Zero));
 
@@ -20,6 +21,15 @@ public class WorkServiceTests : IAsyncLifetime
 
     private WorkService CreateService(LibraryDbContext db) => new(db, _time);
 
+    public WorkServiceTests(SqlServerFixture fixture)
+    {
+        _connectionString = new SqlConnectionStringBuilder(fixture.ConnectionString)
+        {
+            InitialCatalog = $"LibraryTest_{Guid.NewGuid():N}"
+        }.ConnectionString;
+    }
+
+    
     // 每個測試開始前：建立資料庫，並用正式的 Migration 建表
     public async Task InitializeAsync()
     {
