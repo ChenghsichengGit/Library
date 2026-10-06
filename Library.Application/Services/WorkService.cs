@@ -32,7 +32,7 @@ public class WorkService
         var works = _db.Works.AsNoTracking();
 
         // Where 不會修改 works，而是回傳加了條件的新查詢，所以要存回 works
-        // 不能用 w.Title：Title 是 C# 算出來的，資料庫沒有這個欄位，EF Core 翻譯不成 SQL
+        // 比對三種語言的名稱而不是 Title：Title 只是其中一個，用其他語言的名稱搜尋也要找得到
         if(!String.IsNullOrEmpty(query.Q))
             works = works.Where(w =>
                 w.TitleZh.Contains(query.Q) ||

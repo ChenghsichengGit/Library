@@ -248,4 +248,29 @@ public class WorkServiceTests : IAsyncLifetime
         Assert.Equal(2, result.Count);
         Assert.All(result, w => Assert.InRange(w.Score, 3, 5));
     }
+    
+    // 主要名稱的規則在資料庫的計算欄位裡，只能用整合測試驗證（原本的單元測試 WorkTests 已移除）
+    // expected 是事先寫好的標準答案，測試裡不能去改它
+    // 沒有「三個都空」這組：CHECK 約束讓這種作品存不進資料庫
+    [Theory]
+    [InlineData("中文", "日本語", "English", "中文")]
+    [InlineData("", "日本語", "English", "日本語")]
+    [InlineData("", "", "English", "English")]
+    public async Task CreateAsync_SetsTitleFromFirstNonEmptyName(string zh, string ja, string en, string expected)
+    {
+        int id;
+        
+        await using (var db = CreateDbContext())
+        {
+            var service = CreateService(db);
+            var work = await service.CreateAsync(new SaveWorkRequest { TitleZh = zh, TitleJa = ja, TitleEn = en });
+            id =  work.Id;
+        }
+        // 用新的 DbContext 讀，拿到的是資料庫計算並存起來的 Title
+        await using var verifyDb = CreateDbContext();
+        var result = await CreateService(verifyDb).GetByIdAsync(id);
+
+        Assert.NotNull(result);
+        Assert.Equal(expected, result.Title);
+    }
 }

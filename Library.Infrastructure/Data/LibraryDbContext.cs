@@ -34,5 +34,10 @@ public class LibraryDbContext : DbContext, ILibraryDbContext
         // 全域查詢過濾器：所有查 Works 的查詢都自動加上「沒被刪除」，不用每個地方自己記得加
         // 要查已刪除的資料時，在查詢加 .IgnoreQueryFilters()
         modelBuilder.Entity<Work>().HasQueryFilter(w => !w.DeletedAt.HasValue);
+        
+        // 主要名稱由資料庫依中 → 日 → 英計算並存起來，才能用在排序和查詢裡
+        modelBuilder.Entity<Work>()
+            .Property(w => w.Title)
+            .HasComputedColumnSql("COALESCE(NULLIF([TitleZh], N''), NULLIF([TitleJa], N''), [TitleEn])", stored: true);
     }
 }
