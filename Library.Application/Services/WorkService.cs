@@ -16,13 +16,31 @@ public class WorkService
         _time = time;
     }
 
-    public async Task<List<WorkDto>> GetWorksAsync()
+    public async Task<List<WorkDto>> GetWorksAsync(WorkQuery query)
     {
-        var works = await _db.Works
-            .AsNoTracking()
-            .ToListAsync();
+        var works = _db.Works.AsNoTracking();
+        
+        if(!String.IsNullOrEmpty(query.Q))
+            works = works.Where(w =>
+                w.TitleZh.Contains(query.Q) ||
+                w.TitleJa.Contains(query.Q) ||
+                w.TitleEn.Contains(query.Q) ||
+                w.Remark.Contains(query.Q));
+        
+        if(query.Favorite != null)
+            works = works.Where(w => w.Favorite == query.Favorite);
+        
+        if(query.Purchased != null)
+            works = works.Where(w => w.Purchased == query.Purchased);
+        
+        if(query.MinScore != null)
+            works = works.Where(w => w.Score >= query.MinScore);
+        
+        if(query.MaxScore != null)
+            works = works.Where(w => w.Score <= query.MaxScore);
 
-        return works.Select(WorkDto.From).ToList();
+        var list = await works.ToListAsync();
+        return list.Select(WorkDto.From).ToList();
     }
 
     public async Task<WorkDto?> GetByIdAsync(int id)

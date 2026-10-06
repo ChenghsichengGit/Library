@@ -180,4 +180,57 @@ public class WorkServiceTests : IAsyncLifetime
         Assert.Equal(3, result.Score);
         Assert.Equal(new DateTime(2026, 1, 1, 12, 0, 0), result.CreatedAt);
     }
+    
+    [Fact]
+    public async Task GetWorksAsync_FiltersBySearchText_InAnyTitleOrRemark()
+    {
+        await using (var db = CreateDbContext())
+        {
+            var service = CreateService(db);
+            await service.CreateAsync(new SaveWorkRequest { TitleJa = "魔法少女" });
+            await service.CreateAsync(new SaveWorkRequest { TitleEn = "Magic Girl", Remark = "魔法" });
+            await service.CreateAsync(new SaveWorkRequest { TitleZh = "其他作品" });
+        }
+
+        await using var verifyDb = CreateDbContext();
+        var result = await CreateService(verifyDb).GetWorksAsync(new WorkQuery { Q = "魔法" });
+
+        // 第 1 筆比對到日文名稱，第 2 筆比對到備註，第 3 筆不符合
+        Assert.Equal(2, result.Count);
+    }
+
+    [Fact]
+    public async Task GetWorksAsync_NoFilter_ReturnsAll()
+    {
+        await using (var db = CreateDbContext())
+        {
+            var service = CreateService(db);
+            await service.CreateAsync(new SaveWorkRequest { TitleJa = "魔法少女" });
+            await service.CreateAsync(new SaveWorkRequest { TitleEn = "Magic Girl", Remark = "魔法" });
+            await service.CreateAsync(new SaveWorkRequest { TitleZh = "其他作品" });
+        }
+
+        await using var verifyDb = CreateDbContext();
+        var result = await CreateService(verifyDb).GetWorksAsync(new WorkQuery {});
+
+        Assert.Equal(3, result.Count);
+    }
+    [Fact]
+    public async Task GetWorksAsync_FiltersByScoreRange()
+    {
+        await using (var db = CreateDbContext())
+        {
+            var service = CreateService(db);
+            await service.CreateAsync(new SaveWorkRequest { TitleJa = "魔法少女", Score = 0});
+            await service.CreateAsync(new SaveWorkRequest { TitleEn = "Magic Girl", Remark = "魔法", Score = 3});
+            await service.CreateAsync(new SaveWorkRequest { TitleZh = "其他作品", Score = 5});
+            await service.CreateAsync(new SaveWorkRequest { TitleZh = "其他作品2", Score = 6});
+        }
+
+        await using var verifyDb = CreateDbContext();
+        var result = await CreateService(verifyDb).GetWorksAsync(new WorkQuery {MinScore = 3, MaxScore = 5});
+
+        Assert.Equal(2, result.Count);
+        Assert.All(result, w => Assert.InRange(w.Score, 3, 5));
+    }
 }

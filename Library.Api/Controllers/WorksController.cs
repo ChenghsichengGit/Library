@@ -17,9 +17,9 @@ public class WorksController : ControllerBase
     }
     
     [HttpGet]
-    public async Task<ActionResult<List<WorkDto>>> GetAll()
+    public async Task<ActionResult<List<WorkDto>>> GetAll([FromQuery] WorkQuery query)
     {
-        return await _works.GetWorksAsync();
+        return await _works.GetWorksAsync(query);
     }
 
     [HttpGet("{id:int}")]
