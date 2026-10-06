@@ -1,4 +1,4 @@
-﻿<Window x:Class="Library.Desktop.MainWindow"
+<Window x:Class="Library.Desktop.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -6,14 +6,23 @@
         xmlns:local="clr-namespace:Library.Desktop"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
+    <!--
+        {Binding 名稱}：去 DataContext（MainViewModel）找同名的屬性。
+        - 顯示用（Text、ItemsSource）：ViewModel 的屬性一改，畫面自動更新
+        - 輸入用（TextBox、CheckBox…）：雙向，使用者改了，ViewModel 的屬性也跟著改
+        - 按鈕（Command）：按下時執行 ViewModel 的命令；命令的 CanExecute 是 false 時按鈕自動變灰
+    -->
     <DockPanel Margin="8">
+        <!-- 上方：工具列 -->
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
             <Button Content="重新載入" Command="{Binding LoadCommand}" Padding="12,4" />
             <Button Content="新增" Command="{Binding NewCommand}" Padding="12,4" Margin="8,0,0,0" />
             <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center" Margin="12,0,0,0" />
         </StackPanel>
 
+        <!-- 右側：編輯表單 -->
         <StackPanel DockPanel.Dock="Right" Width="260" Margin="8,0,0,0">
+            <!-- UpdateSourceTrigger=PropertyChanged：每打一個字就更新 ViewModel（預設是離開輸入框時才更新） -->
             <TextBlock Text="中文名稱" />
             <TextBox Text="{Binding TitleZh, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" />
             <TextBlock Text="日文名稱" />
@@ -23,6 +32,7 @@
             <TextBlock Text="上架日期" />
             <DatePicker SelectedDate="{Binding ReleaseDate}" Margin="0,2,0,8" />
             <TextBlock Text="評分（6 是王冠）" />
+            <!-- 選項來自 ScoreOptions，選中的值同步到 Score -->
             <ComboBox ItemsSource="{Binding ScoreOptions}" SelectedItem="{Binding Score}" Margin="0,2,0,8" />
             <CheckBox Content="最愛" IsChecked="{Binding Favorite}" Margin="0,0,0,4" />
             <CheckBox Content="已購買" IsChecked="{Binding Purchased}" Margin="0,0,0,8" />
@@ -30,10 +40,14 @@
             <TextBox Text="{Binding Remark, UpdateSourceTrigger=PropertyChanged}"
                      Height="60" TextWrapping="Wrap" AcceptsReturn="True" Margin="0,2,0,8" />
             <Button Content="儲存" Command="{Binding SaveCommand}" Padding="12,4" />
+            <!-- 沒有選任何作品時會變灰：由 ViewModel 的 CanDelete() 決定 -->
             <Button Content="刪除" Command="{Binding DeleteCommand}" Padding="12,4" Margin="0,8,0,0" />
             <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" TextWrapping="Wrap" Margin="0,8,0,0" />
         </StackPanel>
 
+        <!-- 剩下的空間：作品表格（DockPanel 的最後一個元素會填滿剩下的空間，所以放最後） -->
+        <!-- 沒指定欄位時，DataGrid 會依照 WorkItem 的屬性自動產生欄位 -->
+        <!-- SelectedItem：點了哪一列，就同步到 ViewModel 的 SelectedWork -->
         <DataGrid ItemsSource="{Binding Works}" SelectedItem="{Binding SelectedWork}" IsReadOnly="True" />
     </DockPanel>
 </Window>

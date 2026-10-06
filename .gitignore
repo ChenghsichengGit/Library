@@ -6,3 +6,5 @@ riderModule.iml
 .idea/
 *.DotSettings.user
 .env
+# 本機的學習文件，不進版本控制
+docs/

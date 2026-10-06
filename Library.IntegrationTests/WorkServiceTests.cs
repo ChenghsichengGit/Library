@@ -7,6 +7,16 @@ using Microsoft.Extensions.Time.Testing;
 
 namespace Library.IntegrationTests;
 
+/// <summary>
+/// WorkService 的整合測試：搭配真的 SQL Server（Testcontainers 開的 Docker 容器）執行。
+/// </summary>
+/// <remarks>
+/// 每個測試的流程：建構子決定資料庫名稱 → InitializeAsync 建庫並跑 Migration → 測試 → DisposeAsync 刪庫。
+/// 驗證時一律用新的 DbContext 重新讀取：同一個 DbContext 可能直接給你記憶體裡的物件，
+/// 這樣就抓不到「忘了 SaveChangesAsync」這種錯誤。
+/// 這裡不經過 DI 容器，直接 new WorkService(db, 假時鐘)。
+/// </remarks>
+// [Collection("SqlServer")]：和其他整合測試共用同一個 SQL Server 容器（見 SqlServerCollection）
 [Collection("SqlServer")]
 public class WorkServiceTests : IAsyncLifetime
 {
@@ -21,6 +31,8 @@ public class WorkServiceTests : IAsyncLifetime
 
     private WorkService CreateService(LibraryDbContext db) => new(db, _time);
 
+    // xUnit 每個測試都會建立一個新的 WorkServiceTests，並把共用的 SqlServerFixture 傳進來
+    // 容器給的連線字串指向 master，這裡換成這個測試專用的資料庫名稱
     public WorkServiceTests(SqlServerFixture fixture)
     {
         _connectionString = new SqlConnectionStringBuilder(fixture.ConnectionString)
@@ -130,7 +142,9 @@ public class WorkServiceTests : IAsyncLifetime
         await using var verifyDb = CreateDbContext();
         var service = CreateService(verifyDb);
 
+        // 一般查詢查不到（全域過濾器排除了已刪除的作品）
         var found = await service.GetByIdAsync(id);
+        // IgnoreQueryFilters：暫時關掉全域過濾器，才查得到已刪除的資料，確認資料還在
         var result = await verifyDb.Works.IgnoreQueryFilters().FirstOrDefaultAsync(w => w.Id == id);
 
         Assert.Null(found);
@@ -230,6 +244,7 @@ public class WorkServiceTests : IAsyncLifetime
         await using var verifyDb = CreateDbContext();
         var result = await CreateService(verifyDb).GetWorksAsync(new WorkQuery {MinScore = 3, MaxScore = 5});
 
+        // 只檢查筆數不夠：條件寫反時（篩出 0 和 6）筆數也是 2，所以也要檢查每筆的評分
         Assert.Equal(2, result.Count);
         Assert.All(result, w => Assert.InRange(w.Score, 3, 5));
     }

@@ -1,6 +1,9 @@
-﻿namespace Library.Desktop.Models;
+namespace Library.Desktop.Models;
 
-// 新增與修改時送給 API 的內容；欄位名稱要和後端的 SaveWorkRequest 對得上
+/// <summary>
+/// 新增與修改時送給 API 的內容，會被轉成 JSON 放在 request body 裡。
+/// 欄位名稱要和後端的 SaveWorkRequest 對得上。
+/// </summary>
 public record SaveWorkRequest(
     string? TitleZh,
     string? TitleJa,

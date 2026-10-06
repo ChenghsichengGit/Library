@@ -1,33 +1,43 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using Library.Desktop.Models;
 
 namespace Library.Desktop.Services;
 
-// 所有和後端 API 溝通的程式碼集中在這裡，ViewModel 不需要知道網址和 HTTP 的細節
+/// <summary>
+/// 呼叫後端 API 的地方：把「方法呼叫」變成 HTTP 請求，再把回傳的 JSON 變回 C# 物件。
+/// 所有和後端溝通的程式碼集中在這裡，ViewModel 不需要知道網址和 HTTP 的細節。
+/// </summary>
 public class WorksApiClient
 {
+    // API 的位置，和在瀏覽器開 Swagger 用的是同一個
     private readonly HttpClient _http = new() { BaseAddress = new Uri("http://localhost:5265/") };
 
+    /// <summary>GET /api/works：取得作品清單。回傳的 JSON 自動轉成 List&lt;WorkItem&gt;。</summary>
     public async Task<List<WorkItem>> GetWorksAsync()
     {
+        // ?? []：萬一回傳的是 null，就給一個空清單
         return await _http.GetFromJsonAsync<List<WorkItem>>("api/works") ?? [];
     }
-    
+
+    /// <summary>POST /api/works：新增作品，回傳建立好的作品（含新的 Id）。驗證失敗丟 ApiValidationException。</summary>
     public async Task<WorkItem> CreateAsync(SaveWorkRequest request)
     {
+        // 把 request 轉成 JSON，用 POST 送出
         var response = await _http.PostAsJsonAsync("api/works", request);
         await EnsureSuccessAsync(response);
         return (await response.Content.ReadFromJsonAsync<WorkItem>())!;
     }
 
+    /// <summary>PUT /api/works/{id}：修改作品。驗證失敗丟 ApiValidationException。</summary>
     public async Task UpdateAsync(int id, SaveWorkRequest request)
     {
         var response = await _http.PutAsJsonAsync($"api/works/{id}", request);
         await EnsureSuccessAsync(response);
     }
 
+    /// <summary>DELETE /api/works/{id}：刪除作品（後端是軟刪除）。</summary>
     public async Task DeleteAsync(int id)
     {
         var response = await _http.DeleteAsync($"api/works/{id}");
@@ -39,6 +49,8 @@ public class WorksApiClient
     {
         if (response.StatusCode == HttpStatusCode.BadRequest)
         {
+            // 400 的回應長這樣：{ "errors": { "TitleZh": ["至少輸入一個名稱"], "TitleJa": [...] } }
+            // 同一句訊息可能掛在好幾個欄位上，攤平後去掉重複
             var problem = await response.Content.ReadFromJsonAsync<ValidationProblem>();
             var messages = problem?.Errors.Values.SelectMany(m => m).Distinct().ToList()
                            ?? ["輸入的資料有誤"];
