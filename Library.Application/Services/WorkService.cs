@@ -24,13 +24,14 @@ public class WorkService
     }
 
     /// <summary>
-    /// 依條件查詢作品清單。query 裡沒給的條件就不篩選。
+    /// 依條件查詢作品清單，並依 query.Sort 排序。query 裡沒給的篩選條件就不篩選。
     /// </summary>
     public async Task<List<WorkDto>> GetWorksAsync(WorkQuery query)
     {
         // 這時還沒查資料庫，works 只是「查詢的描述」（IQueryable），下面一個條件一個條件疊上去
         var works = _db.Works.AsNoTracking();
-
+        
+        
         // Where 不會修改 works，而是回傳加了條件的新查詢，所以要存回 works
         // 比對三種語言的名稱而不是 Title：Title 只是其中一個，用其他語言的名稱搜尋也要找得到
         if(!String.IsNullOrEmpty(query.Q))
@@ -51,6 +52,32 @@ public class WorkService
 
         if(query.MaxScore != null)
             works = works.Where(w => w.Score <= query.MaxScore);
+
+        // 先篩選、再排序（和 SQL 的 WHERE … ORDER BY 順序一致）
+        // ordered 是 IOrderedQueryable：已經排過序的查詢，後面才能接 ThenBy
+        var ordered = query.Sort switch
+        {
+            WorkSort.Title => query.Desc
+                ? works.OrderByDescending(w => w.Title)
+                : works.OrderBy(w => w.Title),
+
+            // 沒有上架日的不管升降冪都排最後：先依「是不是 null」排（false 在前），這個方向永遠不變；
+            // 使用者選的升降冪只套用在日期上。SQL Server 預設把 NULL 當最小值，升冪時會排在最前面
+            WorkSort.ReleaseDate => query.Desc
+                ? works.OrderBy(w => w.ReleaseDate == null).ThenByDescending(w => w.ReleaseDate)
+                : works.OrderBy(w => w.ReleaseDate == null).ThenBy(w => w.ReleaseDate),
+
+            WorkSort.Score => query.Desc
+                ? works.OrderByDescending(w => w.Score)
+                : works.OrderBy(w => w.Score),
+
+            _ => query.Desc
+                ? works.OrderByDescending(w => w.CreatedAt)
+                : works.OrderBy(w => w.CreatedAt)
+        };
+
+        // 排序值相同時（例如評分一樣），資料庫回傳的順序不保證固定；最後依 Id 排，順序才完全確定，之後分頁也不會重複或漏掉
+        works = ordered.ThenBy(w => w.Id);
 
         // 到這裡才真的去資料庫，所有條件合成一句 SQL
         var list = await works.ToListAsync();

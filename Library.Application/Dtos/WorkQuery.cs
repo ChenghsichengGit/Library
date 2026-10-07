@@ -24,6 +24,14 @@ public class WorkQuery :  IValidatableObject
     [Range(0, 6)]
     public int? MaxScore { get; set; }
 
+    /// <summary>排序方式，?sort=title 會自動轉成 WorkSort.Title。排序一定有值（沒給就依加入時間），所以不可為 null。</summary>
+    // EnumDataType：enum 底層是整數，?sort=99 也轉得過去；加了它才會擋下沒定義的值，回 400
+    [EnumDataType(typeof(WorkSort))]
+    public WorkSort Sort { get; set; } = WorkSort.CreatedAt;
+
+    /// <summary>true = 降冪（大到小、新到舊、Z 到 A）；沒給就是升冪。</summary>
+    public bool Desc { get; set; }
+
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
         // int? 比較時只要有一邊是 null，結果就是 false，所以只給其中一個時不會觸發

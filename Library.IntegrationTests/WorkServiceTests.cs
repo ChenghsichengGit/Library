@@ -273,4 +273,39 @@ public class WorkServiceTests : IAsyncLifetime
         Assert.NotNull(result);
         Assert.Equal(expected, result.Title);
     }
+
+    [Fact]
+    public async Task GetWorksAsync_SortsByTitle()
+    {
+        await using (var db = CreateDbContext())
+        {
+            var service = CreateService(db);
+            await service.CreateAsync(new SaveWorkRequest { TitleJa = "C"});
+            await service.CreateAsync(new SaveWorkRequest { TitleEn = "B"});
+            await service.CreateAsync(new SaveWorkRequest { TitleZh = "A"});
+        }
+        
+        await using var verifyDb = CreateDbContext();
+        var result = await CreateService(verifyDb).GetWorksAsync(new WorkQuery { Sort = WorkSort.Title, Desc = false});
+        
+        Assert.Equal(["A", "B", "C"], result.Select(w => w.Title));
+    }
+
+    [Fact]
+    // 降冪時沒有上架日的也要在最後；Assert.Equal 比較兩個序列時，順序也要一樣才會通過
+    public async Task GetWorksAsync_SortsByReleaseDate_NullsLast()
+    {
+        await using (var db = CreateDbContext())
+        {
+            var service = CreateService(db);
+            await service.CreateAsync(new SaveWorkRequest { TitleZh = "A", ReleaseDate = new DateOnly(2025, 3, 10)});
+            await service.CreateAsync(new SaveWorkRequest { TitleEn = "B"});
+            await service.CreateAsync(new SaveWorkRequest { TitleJa = "C", ReleaseDate = new DateOnly(2025, 1, 1)});
+        }
+        
+        await using var verifyDb = CreateDbContext();
+        var result = await CreateService(verifyDb).GetWorksAsync(new WorkQuery { Sort = WorkSort.ReleaseDate, Desc = true});
+        
+        Assert.Equal([new DateOnly(2025, 3, 10), new DateOnly(2025, 1, 1), null], result.Select(w => w.ReleaseDate));
+    }
 }

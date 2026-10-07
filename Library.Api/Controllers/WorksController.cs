@@ -25,7 +25,7 @@ public class WorksController : ControllerBase
         _works = works;
     }
 
-    /// <summary>GET /api/works?q=…&amp;minScore=…：作品清單，可加篩選條件。回 200。</summary>
+    /// <summary>GET /api/works?q=…&amp;minScore=…&amp;sort=title&amp;desc=true：作品清單，可加篩選與排序。回 200，條件不合法回 400。</summary>
     // [FromQuery]：從網址的 ?q=… 讀取；不寫的話會以為要從 request body 讀，但 GET 沒有 body
     [HttpGet]
     public async Task<ActionResult<List<WorkDto>>> GetAll([FromQuery] WorkQuery query)
