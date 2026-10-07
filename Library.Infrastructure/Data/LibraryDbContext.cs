@@ -40,4 +40,10 @@ public class LibraryDbContext : DbContext, ILibraryDbContext
             .Property(w => w.Title)
             .HasComputedColumnSql("COALESCE(NULLIF([TitleZh], N''), NULLIF([TitleJa], N''), [TitleEn])", stored: true);
     }
+    
+    // 所有 DateTime 欄位讀出來時都標記為 UTC（見 UtcDateTimeConverter）
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        configurationBuilder.Properties<DateTime>().HaveConversion<UtcDateTimeConverter>();
+    }
 }
