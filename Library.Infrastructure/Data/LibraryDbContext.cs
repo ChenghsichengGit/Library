@@ -21,6 +21,9 @@ public class LibraryDbContext : DbContext, ILibraryDbContext
     /// <summary>Works 資料表。</summary>
     public DbSet<Work> Works => Set<Work>();
 
+    /// <summary>Creators 資料表。</summary>
+    public DbSet<Creator> Creators => Set<Creator>();
+
     /// <summary>
     /// Work 類別上寫不出來的資料庫設定放在這裡。修改後要跑 Migration（全域過濾器除外）。
     /// </summary>
@@ -34,13 +37,23 @@ public class LibraryDbContext : DbContext, ILibraryDbContext
         // 全域查詢過濾器：所有查 Works 的查詢都自動加上「沒被刪除」，不用每個地方自己記得加
         // 要查已刪除的資料時，在查詢加 .IgnoreQueryFilters()
         modelBuilder.Entity<Work>().HasQueryFilter(w => !w.DeletedAt.HasValue);
-        
+
         // 主要名稱由資料庫依中 → 日 → 英計算並存起來，才能用在排序和查詢裡
         modelBuilder.Entity<Work>()
             .Property(w => w.Title)
             .HasComputedColumnSql("COALESCE(NULLIF([TitleZh], N''), NULLIF([TitleJa], N''), [TitleEn])", stored: true);
+
+        // 沒有 DbSet 的類別預設用類別名稱當表名（單數），這裡指定成複數，和 Works、Creators 一致
+        // 複合主鍵包含 Role：同一個人在同一部作品可以同時是作者和社團
+        modelBuilder.Entity<WorkCreator>().ToTable("WorkCreators").HasKey(wc => new { wc.WorkId, wc.CreatorId, wc.Role });
+
+        // 和 Work 的軟刪除過濾器配對：從 creator.Works 方向查時，也看不到已刪除作品的關聯
+        modelBuilder.Entity<WorkCreator>().HasQueryFilter(wc => wc.Work.DeletedAt == null);
+
+        // 同一個名字只能有一筆，是 find-or-create 的最後一道防線；SQL Server 預設不分大小寫，Valve 和 valve 視為同一個
+        modelBuilder.Entity<Creator>().HasIndex(c => c.Name).IsUnique();
     }
-    
+
     // 所有 DateTime 欄位讀出來時都標記為 UTC（見 UtcDateTimeConverter）
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {

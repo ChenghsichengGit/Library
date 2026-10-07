@@ -19,9 +19,11 @@ public record WorkItem(
     bool Favorite,
     bool Purchased,
     DateOnly? ReleaseDate,
-    DateTime CreatedAt)
+    DateTime CreatedAt,
+    string[] Authors,
+    string[] Circles)
 {
-    // 下面兩個只有 get 的屬性只給畫面顯示用：JSON 轉換時會忽略，也不會送回 API
+    // 下面這些只有 get 的屬性只給畫面顯示用：JSON 轉換時會忽略，也不會送回 API
 
     /// <summary>加入時間轉成電腦的當地時間（API 回傳的是 UTC，JSON 結尾帶 Z）。</summary>
     public DateTime CreatedAtLocal => CreatedAt.ToLocalTime();
@@ -34,4 +36,10 @@ public record WorkItem(
         6 => "👑",
         _ => new string('★', Score)
     };
+
+    /// <summary>表格顯示用：作者用「、」接成一行。表單編輯用的是換行，見 MainViewModel.AuthorsInput。</summary>
+    public string AuthorsText => string.Join("、", Authors);
+
+    /// <summary>表格顯示用：社團用「、」接成一行。</summary>
+    public string CirclesText => string.Join("、", Circles);
 }

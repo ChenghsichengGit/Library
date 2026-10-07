@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Library.Desktop"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" Height="700" Width="1200">
     <!--
         {Binding 名稱}：去 DataContext（MainViewModel）找同名的屬性。
         - 顯示用（Text、ItemsSource）：ViewModel 的屬性一改，畫面自動更新
@@ -52,6 +52,13 @@
             <TextBox Text="{Binding TitleJa, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" />
             <TextBlock Text="英文名稱" />
             <TextBox Text="{Binding TitleEn, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" />
+            <!-- AcceptsReturn：讓 Enter 換行（預設不會）；不加 TextWrapping，長名字自動折行會看起來像兩個名字 -->
+            <TextBlock Text="作者/開發人員 (一行一個)" />
+            <TextBox Text="{Binding AuthorsInput, UpdateSourceTrigger=PropertyChanged}"
+                     Height="50" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Margin="0,2,0,8" />
+            <TextBlock Text="社團/發行商 (一行一個)" />
+            <TextBox Text="{Binding CirclesInput, UpdateSourceTrigger=PropertyChanged}"
+                     Height="50" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Margin="0,2,0,8" />
             <TextBlock Text="上架日期" />
             <DatePicker SelectedDate="{Binding ReleaseDate}" Margin="0,2,0,8" />
             <TextBlock Text="評分（6 是王冠）" />
@@ -78,6 +85,8 @@
             <DataGrid.Columns>
                 <!-- Width="*"：佔滿剩下的寬度 -->
                 <DataGridTextColumn Header="作品名" Binding="{Binding Title}" Width="*" />
+                <DataGridTextColumn Header="作者" Binding="{Binding AuthorsText}" Width="*" />
+                <DataGridTextColumn Header="社團" Binding="{Binding CirclesText}" Width="*" />
                 <DataGridTextColumn Header="評分" Binding="{Binding ScoreText}" Width="80" />
                 <DataGridCheckBoxColumn Header="最愛" Binding="{Binding Favorite}" Width="50" />
                 <DataGridCheckBoxColumn Header="已購買" Binding="{Binding Purchased}" Width="60" />

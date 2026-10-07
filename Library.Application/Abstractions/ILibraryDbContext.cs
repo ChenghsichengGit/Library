@@ -16,6 +16,10 @@ public interface ILibraryDbContext
     /// <summary>Works 資料表。可以在上面寫 LINQ（Where、OrderBy…），EF Core 會翻譯成 SQL。</summary>
     DbSet<Work> Works { get; }
 
+    /// <summary>Creators 資料表。新增或修改作品時，用來查「這些名字已經存在嗎」。</summary>
+    /// <remarks>WorkCreator 沒有 DbSet：一律透過 work.Creators 操作。</remarks>
+    DbSet<Creator> Creators { get; }
+
     /// <summary>把這次的新增、修改真的寫進資料庫。沒呼叫的話，所有修改都只存在記憶體裡。</summary>
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

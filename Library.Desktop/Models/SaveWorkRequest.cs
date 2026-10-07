@@ -12,4 +12,7 @@ public record SaveWorkRequest(
     DateOnly? ReleaseDate,
     int Score,
     bool Favorite,
-    bool Purchased);
+    bool Purchased,
+    // PUT 是整筆取代：這兩個沒送的話，修改作品時作者和社團會被清空
+    List<string> Authors,
+    List<string> Circles);

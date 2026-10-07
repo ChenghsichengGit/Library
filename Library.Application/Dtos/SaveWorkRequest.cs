@@ -26,6 +26,11 @@ public class SaveWorkRequest : IValidatableObject
     public bool? Favorite { get; set; }
     public bool? Purchased {get; set; }
 
+    // 作者、社團只送名字，Id 和是否已存在由 WorkService 處理；空白和重複的名字也由它濾掉，不算錯誤
+    // 不加 [MaxLength]：加在 List 上限制的是項目數，不是每個名字的長度，所以長度在 Validate 裡檢查
+    public List<string>? Authors { get; set; }
+    public List<string>? Circles { get; set; }
+
     /// <summary>
     /// 跨欄位的規則（標記做不到的）寫在這裡。每個 yield return 是一個錯誤，全部會一起回傳給前端。
     /// </summary>
@@ -43,6 +48,15 @@ public class SaveWorkRequest : IValidatableObject
         {
             yield return new ValidationResult(
                 "評分錯誤", [nameof(Score)]);
+        }
+
+        IEnumerable<string> list = (Authors ?? []).Concat(Circles ?? []);
+
+        // n?.Length：JSON 可能送來 ["A", null]，型別宣告擋不住；null 會被跳過，之後由 WorkService 濾掉
+        if (list.Any(n => n?.Length > 300))
+        {
+            yield return new ValidationResult(
+                "作者或社團名稱不能超過 300 字", [nameof(Authors), nameof(Circles)]);
         }
     }
 }

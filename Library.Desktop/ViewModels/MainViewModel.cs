@@ -120,6 +120,9 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private int _score;
     [ObservableProperty] private bool _favorite;
     [ObservableProperty] private bool _purchased;
+    // TextBox 只能繫結一個字串，所以作者、社團在表單裡是「一行一個名字」的文字，送出時才用 SplitLines 切成清單
+    [ObservableProperty] private string _authorsInput = "";
+    [ObservableProperty] private string _circlesInput = "";
 
     // 紅字的錯誤訊息（驗證失敗、連不上 API）
     [ObservableProperty]
@@ -147,6 +150,8 @@ public partial class MainViewModel : ObservableObject
         Score = value.Score;
         Favorite = value.Favorite;
         Purchased = value.Purchased;
+        AuthorsInput = string.Join("\n", value.Authors);
+        CirclesInput = string.Join("\n", value.Circles);
         ErrorMessage = "";
     }
 
@@ -164,6 +169,8 @@ public partial class MainViewModel : ObservableObject
         Score = 0;
         Favorite = false;
         Purchased = false;
+        AuthorsInput = "";
+        CirclesInput = "";
         ErrorMessage = "";
     }
 
@@ -177,7 +184,7 @@ public partial class MainViewModel : ObservableObject
         var request = new SaveWorkRequest(
             TitleZh, TitleJa, TitleEn, Remark,
             ReleaseDate is { } date ? DateOnly.FromDateTime(date) : null,
-            Score, Favorite, Purchased);
+            Score, Favorite, Purchased, SplitLines(AuthorsInput), SplitLines(CirclesInput));
 
         try
         {
@@ -246,4 +253,10 @@ public partial class MainViewModel : ObservableObject
     partial void OnSelectedScoreFilterChanged(ScoreFilter value) => LoadCommand.Execute(null);
     partial void OnSelectedSortChanged(SortOption value) => LoadCommand.Execute(null);
     partial void OnSortDescendingChanged(bool value) => LoadCommand.Execute(null);
+
+    /// <summary>把表單裡「一行一個名字」的文字切成清單，去掉前後空白和空行。</summary>
+    /// <remarks>Windows 的 TextBox 換行是 \r\n：只用 \n 切開時每段結尾會留下 \r，靠 TrimEntries 一起去掉。</remarks>
+    private static List<string> SplitLines(string text) =>
+        text.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .ToList();
 }

@@ -23,11 +23,17 @@ public record WorkDto(
     int Score,
     bool Favorite,
     bool Purchased,
-    DateTime CreatedAt)
+    DateTime CreatedAt,
+    string[] Authors,
+    string[] Circles)
 {
     /// <summary>
     /// 從 Work 建立 WorkDto。WorkService 用 list.Select(WorkDto.From) 一筆一筆轉換。
     /// </summary>
+    /// <remarks>
+    /// 查詢時要 Include(Creators).ThenInclude(Creator)，否則作者會變成空陣列，或讀 Creator.Name 時發生 NullReferenceException。
+    /// 名字依字母排序：資料庫不保證回傳順序，不排的話同一部作品每次顯示的順序可能不同。
+    /// </remarks>
     public static WorkDto From(Work w) =>
         new(
             w.Id,
@@ -40,5 +46,8 @@ public record WorkDto(
             w.Score,
             w.Favorite,
             w.Purchased,
-            w.CreatedAt);
+            w.CreatedAt,
+            // 資料庫裡作者和社團在同一張表，對外拆成兩個陣列
+            w.Creators.Where(wc => wc.Role == CreatorRole.Author).Select(wc => wc.Creator.Name).Order().ToArray(),
+            w.Creators.Where(wc => wc.Role == CreatorRole.Circle).Select(wc => wc.Creator.Name).Order().ToArray());
 }

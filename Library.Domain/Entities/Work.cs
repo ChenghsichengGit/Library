@@ -56,4 +56,10 @@ public class Work
 
     /// <summary>軟刪除的時間。有值 = 在「最近刪除」裡；null = 正常的作品。</summary>
     public DateTime? DeletedAt { get; set; }
+
+    /// <summary>
+    /// 作者與社團（以 WorkCreator.Role 區分）。
+    /// 查詢時沒有 Include 就是空清單，不代表沒有作者；要讀名字還要 ThenInclude 到 Creator。
+    /// </summary>
+    public List<WorkCreator> Creators { get; set; } = [];
 }

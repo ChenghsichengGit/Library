@@ -308,4 +308,111 @@ public class WorkServiceTests : IAsyncLifetime
         
         Assert.Equal([new DateOnly(2025, 3, 10), new DateOnly(2025, 1, 1), null], result.Select(w => w.ReleaseDate));
     }
+
+    // 防：GetByIdAsync 漏了 Include／ThenInclude（作者變成空陣列或 NullReferenceException）、名字沒整理、沒排序
+    [Fact]
+    public async Task CreateAsync_SavesAuthorsAndCircles()
+    {
+        int id;
+        await using (var db = CreateDbContext())
+        {
+            var dto = await CreateService(db).CreateAsync(new SaveWorkRequest
+            {
+                TitleJa = "テスト",
+                Authors = ["B作者", " A作者 ", "", "a作者"],
+                Circles = ["某社團"]
+            });
+            id = dto.Id;
+        }
+
+        await using (var db = CreateDbContext())
+        {
+            var result = await CreateService(db).GetByIdAsync(id);
+
+            // 空字串被濾掉、前後空白被去掉、a作者 和 A作者 視為同一個，結果依名字排序
+            Assert.Equal(["A作者", "B作者"], result!.Authors);
+            Assert.Equal(["某社團"], result.Circles);
+        }
+    }
+
+    // 防：UpdateAsync 漏了 Include，舊的關聯清不掉，結果變成 A 和 B 都在
+    [Fact]
+    public async Task UpdateAsync_ReplacesAuthors()
+    {
+        int id;
+        await using (var db = CreateDbContext())
+        {
+            var dto = await CreateService(db).CreateAsync(new SaveWorkRequest
+            {
+                TitleJa = "テスト",
+                Authors = ["A"]
+            });
+            id = dto.Id;
+        }
+
+        await using (var db = CreateDbContext())
+        {
+            // PUT 是整筆取代，名稱也要給，否則會撞上資料庫的 CHECK 約束（這裡不經過 Controller 的驗證）
+            var result = await CreateService(db).UpdateAsync(id, new SaveWorkRequest
+            {
+                TitleJa = "テスト",
+                Authors = ["B"]
+            });
+
+            Assert.True(result);
+        }
+        
+        await using (var db = CreateDbContext())
+        {
+            var result = await CreateService(db).GetByIdAsync(id);
+
+            Assert.Equal(["B"], result!.Authors);
+        }
+    }
+
+    // 防：新建的 Creator 沒放回 Dictionary，同一個新名字被建立兩次而撞上唯一索引
+    // Creators 表只有一筆（人），WorkCreators 有兩筆（同一個人的兩個角色）
+    [Fact]
+    public async Task CreateAsync_SameNameAsAuthorAndCircle_CreatesOneCreator()
+    {
+        int id;
+        await using (var db = CreateDbContext())
+        {
+            var dto = await CreateService(db).CreateAsync(new SaveWorkRequest
+            {
+                TitleJa = "テスト",
+                Authors = ["Valve"],
+                Circles = ["Valve"]
+            });
+            id = dto.Id;
+        }
+
+        await using (var db = CreateDbContext())
+        {
+            Assert.Single(await db.Creators.ToListAsync());     // 人只有一個
+
+            var result = await CreateService(db).GetByIdAsync(id);
+            Assert.Equal(["Valve"], result!.Authors);          // 而且同時是作者
+            Assert.Equal(["Valve"], result.Circles);           // 也是社團
+        }
+    }
+
+    // 作品 B 的名稱不含 Valve，被找到只可能是因為作者名稱符合
+    [Fact]
+    public async Task GetWorksAsync_FiltersBySearchText_InCreatorName()
+    {
+        await using (var db = CreateDbContext())
+        {
+            var service = CreateService(db);
+            await service.CreateAsync(new SaveWorkRequest { TitleJa = "A", Authors = ["S"], Circles = ["C", "T"] });
+            await service.CreateAsync(new SaveWorkRequest { TitleEn = "B", Authors = ["Valve"] });
+        }
+
+        await using (var db = CreateDbContext())
+        {
+            var result = await CreateService(db).GetWorksAsync(new WorkQuery {Q = "Valve"});
+            var work = Assert.Single(result);
+            Assert.Equal("B", work.Title);
+        }
+    }
 }
