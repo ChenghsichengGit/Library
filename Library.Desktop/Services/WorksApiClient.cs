@@ -14,11 +14,28 @@ public class WorksApiClient
     // API 的位置，和在瀏覽器開 Swagger 用的是同一個
     private readonly HttpClient _http = new() { BaseAddress = new Uri("http://localhost:5265/") };
 
-    /// <summary>GET /api/works：取得作品清單。回傳的 JSON 自動轉成 List&lt;WorkItem&gt;。</summary>
-    public async Task<List<WorkItem>> GetWorksAsync()
+    /// <summary>GET /api/works?…：依條件取得作品清單。</summary>
+    public async Task<List<WorkItem>> GetWorksAsync(WorkListQuery query)
     {
-        // ?? []：萬一回傳的是 null，就給一個空清單
-        return await _http.GetFromJsonAsync<List<WorkItem>>("api/works") ?? [];
+        return await _http.GetFromJsonAsync<List<WorkItem>>("api/works" + ToQueryString(query)) ?? [];
+    }
+
+// 把查詢條件組成 ?sort=title&desc=True&q=…；沒給的條件不放進網址，後端就不會篩選
+    private static string ToQueryString(WorkListQuery query)
+    {
+        var parts = new List<string> { $"sort={query.Sort}", $"desc={query.Desc}" };
+
+        // 搜尋字可能有空白、& 或中文，要轉成網址安全的格式，不然 & 會被當成下一個參數
+        if (!string.IsNullOrWhiteSpace(query.Q))
+            parts.Add($"q={Uri.EscapeDataString(query.Q.Trim())}");
+        if (query.Favorite is { } favorite)
+            parts.Add($"favorite={favorite}");
+        if (query.MinScore is { } min)
+            parts.Add($"minScore={min}");
+        if (query.MaxScore is { } max)
+            parts.Add($"maxScore={max}");
+
+        return "?" + string.Join("&", parts);
     }
 
     /// <summary>POST /api/works：新增作品，回傳建立好的作品（含新的 Id）。驗證失敗丟 ApiValidationException。</summary>

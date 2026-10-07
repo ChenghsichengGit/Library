@@ -21,6 +21,34 @@ public partial class MainViewModel : ObservableObject
 {
     private readonly WorksApiClient _api;
     private readonly IDialogService _dialog;
+    
+    // 下拉選單的選項。寫成 static，下面的欄位初始值才能直接引用（欄位初始值不能用非 static 的成員）
+    private static readonly SortOption[] AllSortOptions =
+    [
+        new("加入時間", "createdAt"),
+        new("上架日", "releaseDate"),
+        new("評分", "score"),
+        new("作品名", "title"),
+    ];
+
+    private static readonly ScoreFilter[] AllScoreFilters =
+    [
+        new("全部評分", null, null),
+        new("王冠", 6, null),
+        new("五星以上", 5, null),
+        new("三星以上", 3, null),
+        new("未評價", null, 0),
+    ];
+
+    public SortOption[] SortOptions => AllSortOptions;
+    public ScoreFilter[] ScoreFilters => AllScoreFilters;
+
+// 篩選與排序條件（和上方工具列繫結）
+    [ObservableProperty] private string _searchText = "";
+    [ObservableProperty] private bool _onlyFavorite;
+    [ObservableProperty] private ScoreFilter _selectedScoreFilter = AllScoreFilters[0];
+    [ObservableProperty] private SortOption _selectedSort = AllSortOptions[0];
+    [ObservableProperty] private bool _sortDescending = true;
 
     // 需要的東西從建構子傳進來（在 MainWindow.xaml.cs 建立），測試時可以換成假的
     public MainViewModel(WorksApiClient api, IDialogService dialog)
@@ -37,7 +65,8 @@ public partial class MainViewModel : ObservableObject
     private string _statusMessage = "";
 
     /// <summary>
-    /// 從 API 讀取作品清單，放進 Works。由「重新載入」按鈕（LoadCommand）和視窗開啟時呼叫。
+    /// 依目前的搜尋、篩選、排序條件，從 API 讀取作品清單放進 Works。
+    /// 由「重新載入」「搜尋」按鈕、搜尋框按 Enter、篩選條件改變時、視窗開啟時呼叫。
     /// </summary>
     // [RelayCommand] 會自動產生 LoadCommand，讓按鈕可以繫結（名稱規則：去掉 Async，加上 Command）
     [RelayCommand]
@@ -46,7 +75,19 @@ public partial class MainViewModel : ObservableObject
         StatusMessage = "載入中…";
         try
         {
-            var works = await _api.GetWorksAsync();
+            // 用畫面上的條件組出查詢（Q: 這種寫法叫具名引數，參數多時不容易搞錯順序）
+            var query = new WorkListQuery
+            (
+                Q: SearchText,
+                // 沒勾 = 不篩選（null），不是「只要非最愛」（false）；送 false 的話最愛的作品全都會被篩掉
+                Favorite: OnlyFavorite ? true : null,
+                MinScore: SelectedScoreFilter.Min,
+                MaxScore: SelectedScoreFilter.Max,
+                Sort: SelectedSort.Value,
+                Desc: SortDescending
+                
+            );
+            var works = await _api.GetWorksAsync(query);
             Works.Clear();
             foreach (var work in works)
                 Works.Add(work);
@@ -198,4 +239,11 @@ public partial class MainViewModel : ObservableObject
 
     // 有正在編輯的作品（不是新增模式）才能刪除；回傳 false 時刪除按鈕會自動變灰
     private bool CanDelete() => EditingId is not null;
+
+    // 篩選或排序的選項一改就重新查詢（屬性改變時自動呼叫的掛鉤）
+    // SearchText 不在這裡：每打一個字都查太多次，所以要按 Enter 或「搜尋」才查
+    partial void OnOnlyFavoriteChanged(bool value) => LoadCommand.Execute(null);
+    partial void OnSelectedScoreFilterChanged(ScoreFilter value) => LoadCommand.Execute(null);
+    partial void OnSelectedSortChanged(SortOption value) => LoadCommand.Execute(null);
+    partial void OnSortDescendingChanged(bool value) => LoadCommand.Execute(null);
 }

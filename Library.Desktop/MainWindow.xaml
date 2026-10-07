@@ -19,6 +19,29 @@
             <Button Content="新增" Command="{Binding NewCommand}" Padding="12,4" Margin="8,0,0,0" />
             <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center" Margin="12,0,0,0" />
         </StackPanel>
+        
+        <!-- 第二列：搜尋、篩選、排序 -->
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+            <TextBlock Text="搜尋" VerticalAlignment="Center" Margin="0,0,6,0" />
+            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Width="180" VerticalContentAlignment="Center">
+                <!-- 在搜尋框按 Enter，等於按「搜尋」按鈕 -->
+                <TextBox.InputBindings>
+                    <KeyBinding Key="Enter" Command="{Binding LoadCommand}" />
+                </TextBox.InputBindings>
+            </TextBox>
+            <Button Content="搜尋" Command="{Binding LoadCommand}" Padding="12,2" Margin="6,0,16,0" />
+
+            <CheckBox Content="只看最愛" IsChecked="{Binding OnlyFavorite}" VerticalAlignment="Center" Margin="0,0,16,0" />
+
+            <!-- DisplayMemberPath：選項是 ScoreFilter 物件，畫面上顯示它的 Label -->
+            <ComboBox ItemsSource="{Binding ScoreFilters}" SelectedItem="{Binding SelectedScoreFilter}"
+                      DisplayMemberPath="Label" Width="100" Margin="0,0,16,0" />
+
+            <TextBlock Text="排序" VerticalAlignment="Center" Margin="0,0,6,0" />
+            <ComboBox ItemsSource="{Binding SortOptions}" SelectedItem="{Binding SelectedSort}"
+                      DisplayMemberPath="Label" Width="90" />
+            <CheckBox Content="降冪" IsChecked="{Binding SortDescending}" VerticalAlignment="Center" Margin="8,0,0,0" />
+        </StackPanel>
 
         <!-- 右側：編輯表單 -->
         <StackPanel DockPanel.Dock="Right" Width="260" Margin="8,0,0,0">
@@ -48,6 +71,6 @@
         <!-- 剩下的空間：作品表格（DockPanel 的最後一個元素會填滿剩下的空間，所以放最後） -->
         <!-- 沒指定欄位時，DataGrid 會依照 WorkItem 的屬性自動產生欄位 -->
         <!-- SelectedItem：點了哪一列，就同步到 ViewModel 的 SelectedWork -->
-        <DataGrid ItemsSource="{Binding Works}" SelectedItem="{Binding SelectedWork}" IsReadOnly="True" />
+        <DataGrid ItemsSource="{Binding Works}" SelectedItem="{Binding SelectedWork}" IsReadOnly="True" CanUserSortColumns="False" />
     </DockPanel>
 </Window>
