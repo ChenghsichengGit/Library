@@ -1,5 +1,7 @@
 using Library.Application.Abstractions;
+using Library.Application.Sources;
 using Library.Infrastructure.Data;
+using Library.Infrastructure.Sources;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,6 +31,13 @@ public static class DependencyInjection
         // 不寫成 AddScoped<ILibraryDbContext, LibraryDbContext>()：那樣同一個請求會有兩個不同的 DbContext，
         // 在其中一個改的資料，另一個 SaveChanges 時不會存進去
         services.AddScoped<ILibraryDbContext>(sp => sp.GetRequiredService<LibraryDbContext>());
+
+        // SteamSource 登記成 IStoreSource；它要的 HttpClient 由工廠從連線池提供
+        services.AddHttpClient<IStoreSource, SteamSource>(client =>
+        {
+            client.BaseAddress = new Uri("https://store.steampowered.com/");
+            client.Timeout = TimeSpan.FromSeconds(10);
+        });
 
         return services;
     }
