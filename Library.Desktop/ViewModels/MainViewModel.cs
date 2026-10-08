@@ -21,7 +21,7 @@ public partial class MainViewModel : ObservableObject
 {
     private readonly WorksApiClient _api;
     private readonly IDialogService _dialog;
-    
+
     // 下拉選單的選項。寫成 static，下面的欄位初始值才能直接引用（欄位初始值不能用非 static 的成員）
     private static readonly SortOption[] AllSortOptions =
     [
@@ -85,7 +85,6 @@ public partial class MainViewModel : ObservableObject
                 MaxScore: SelectedScoreFilter.Max,
                 Sort: SelectedSort.Value,
                 Desc: SortDescending
-                
             );
             var works = await _api.GetWorksAsync(query);
             Works.Clear();
@@ -123,6 +122,8 @@ public partial class MainViewModel : ObservableObject
     // TextBox 只能繫結一個字串，所以作者、社團在表單裡是「一行一個名字」的文字，送出時才用 SplitLines 切成清單
     [ObservableProperty] private string _authorsInput = "";
     [ObservableProperty] private string _circlesInput = "";
+    // 商店網址：只用來抓取資料填表單，不會存進作品
+    [ObservableProperty] private string _storeUrl = "";
 
     // 紅字的錯誤訊息（驗證失敗、連不上 API）
     [ObservableProperty]
@@ -171,6 +172,7 @@ public partial class MainViewModel : ObservableObject
         Purchased = false;
         AuthorsInput = "";
         CirclesInput = "";
+        StoreUrl = "";
         ErrorMessage = "";
     }
 
@@ -244,6 +246,48 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
+    /// <summary>
+    /// 「抓取」按鈕（FetchCommand）：依商店網址向 API 查詢，把抓到的資料填進表單。不會存檔，使用者確認後再按儲存。
+    /// </summary>
+    /// <remarks>
+    /// 有值才覆蓋：商店沒有的欄位（例如沒有日文名稱）保留使用者已經填的內容；評分、最愛、備註完全不碰。
+    /// 不改 EditingId：新增模式下抓取 → 儲存時新增；編輯中抓取 → 儲存時更新那部作品。
+    /// 執行期間 FetchCommand 的 CanExecute 自動是 false，按鈕會變灰，不會被連按。
+    /// </remarks>
+    [RelayCommand]
+    private async Task FetchAsync()
+    {
+        // 空白就不送出：API 的 url 參數是必填，送出去會收到一大段英文的驗證錯誤 JSON
+        if (string.IsNullOrWhiteSpace(StoreUrl))
+        {
+            ErrorMessage = "請輸入網址";
+            return;
+        }
+
+        try
+        {
+            var info = await _api.LookupAsync(StoreUrl.Trim());
+            TitleZh = KeepIfEmpty(info.TitleZh, TitleZh);
+            TitleJa = KeepIfEmpty(info.TitleJa, TitleJa);
+            TitleEn = KeepIfEmpty(info.TitleEn, TitleEn);
+            AuthorsInput = KeepIfEmpty(string.Join("\n", info.Authors), AuthorsInput);
+            CirclesInput = KeepIfEmpty(string.Join("\n", info.Circles), CirclesInput);
+            // 沒抓到日期（null）就用 ?? 保留原本的
+            ReleaseDate = info.ReleaseDate?.ToDateTime(TimeOnly.MinValue) ?? ReleaseDate;
+
+            ErrorMessage = "";
+        }
+        catch (ApiValidationException ex)
+        {
+            // API 回 400／404／502：顯示 API 給的訊息（不支援這個網站、找不到這個作品、無法連線到商店）
+            ErrorMessage = string.Join("\n", ex.Messages);
+        }
+        catch (HttpRequestException)
+        {
+            ErrorMessage = "查詢失敗，請確認 Library.Api 有在執行";
+        }
+    }
+
     // 有正在編輯的作品（不是新增模式）才能刪除；回傳 false 時刪除按鈕會自動變灰
     private bool CanDelete() => EditingId is not null;
 
@@ -259,4 +303,8 @@ public partial class MainViewModel : ObservableObject
     private static List<string> SplitLines(string text) =>
         text.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .ToList();
+
+    // 抓到的值是空的就保留表單原本的內容，有值才覆蓋
+    private static string KeepIfEmpty(string fetched, string current) =>
+        fetched == "" ? current : fetched;
 }

@@ -1,4 +1,5 @@
 using Library.Application.Services;
+using Library.Application.Sources;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Library.Application;
@@ -22,6 +23,9 @@ public static class DependencyInjection
 
         // 有人要 TimeProvider 時給系統時鐘；Singleton = 整個程式共用一個（時鐘沒有狀態，共用沒問題）
         services.AddSingleton(TimeProvider.System);
+
+        // 建構子要的 IEnumerable<IStoreSource>，容器會把所有登記成 IStoreSource 的實作（在 AddInfrastructure）一次給它
+        services.AddScoped<StoreLookupService>();
 
         // 回傳自己，呼叫的地方才能接著寫 .AddXxx()
         return services;

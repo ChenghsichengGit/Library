@@ -77,6 +77,25 @@ public class WorksApiClient
         response.EnsureSuccessStatusCode();
     }
 
+    /// <summary>
+    /// GET /api/lookup?url=…：用商店網址查詢作品資料，不會存檔。
+    /// 不支援的網址、找不到作品、連不上商店時，丟出帶有 API 訊息的 ApiValidationException。
+    /// </summary>
+    public async Task<StoreWorkInfo> LookupAsync(string url)
+    {
+        // 網址裡又放了一個網址：Steam 網址裡的 & ? / 不轉換的話，& 會被當成外層網址的下一個參數
+        var response = await _http.GetAsync($"api/lookup?url={Uri.EscapeDataString(url)}");
+
+        // LookupController 的 400／404／502 內容都是一段純文字，不是 EnsureSuccessAsync 處理的 { "errors": … } 格式
+        if (!response.IsSuccessStatusCode)
+        {
+            var message = await response.Content.ReadAsStringAsync();
+            throw new ApiValidationException([message]);
+        }
+
+        return (await response.Content.ReadFromJsonAsync<StoreWorkInfo>())!;
+    }
+
 // ASP.NET Core 驗證失敗時回傳的 JSON 裡，只需要 errors 這個欄位
     private record ValidationProblem(Dictionary<string, string[]> Errors);
 }

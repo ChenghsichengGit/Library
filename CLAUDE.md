@@ -54,6 +54,6 @@ dotnet ef database update --project Library.Infrastructure --startup-project Lib
 
 ## 進度
 
-已完成：作品 CRUD API、分層架構、單元與整合測試（Testcontainers）、Docker、CI、WPF 的清單與新增／修改／刪除、搜尋、篩選與排序（主要名稱為 SQL Server 計算欄位；WPF 也有對應的工具列）、API 時間標明 UTC、WPF 表格欄位與當地時間顯示、作者與社團（多對多，`Creators` 一張表以 `WorkCreators.Role` 區分；API 只收發名字，WPF 一行一個）。
+已完成：作品 CRUD API、分層架構、單元與整合測試（Testcontainers）、Docker、CI、WPF 的清單與新增／修改／刪除、搜尋、篩選與排序（主要名稱為 SQL Server 計算欄位；WPF 也有對應的工具列）、API 時間標明 UTC、WPF 表格欄位與當地時間顯示、作者與社團（多對多，`Creators` 一張表以 `WorkCreators.Role` 區分；API 只收發名字，WPF 一行一個）、外部來源 Steam（`IStoreSource` 抽象、`IHttpClientFactory`、假 handler 單元測試；`GET /api/lookup` 查詢，WPF 貼網址「抓取」填表單，不存檔）。
 
-下一步：外部來源（Steam、DLsite）→ 背景工作與 SignalR → 登入 → README。
+下一步：商店連結與封面（作品存網址、購買狀態、封面圖）→ DLsite → 背景工作與 SignalR → 登入 → README。
