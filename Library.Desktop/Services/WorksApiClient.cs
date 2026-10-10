@@ -6,12 +6,10 @@ using Library.Desktop.Models;
 namespace Library.Desktop.Services;
 
 /// <summary>
-/// 呼叫後端 API 的地方：把「方法呼叫」變成 HTTP 請求，再把回傳的 JSON 變回 C# 物件。
-/// 所有和後端溝通的程式碼集中在這裡，ViewModel 不需要知道網址和 HTTP 的細節。
+/// 呼叫後端 API：方法呼叫變成 HTTP 請求，JSON 變回 C# 物件。ViewModel 不需要知道網址和 HTTP 的細節。
 /// </summary>
 public class WorksApiClient
 {
-    // API 的位置，和在瀏覽器開 Swagger 用的是同一個
     private readonly HttpClient _http = new() { BaseAddress = new Uri("http://localhost:5265/") };
 
     /// <summary>GET /api/works?…：依條件取得作品清單。</summary>
@@ -20,12 +18,12 @@ public class WorksApiClient
         return await _http.GetFromJsonAsync<List<WorkItem>>("api/works" + ToQueryString(query)) ?? [];
     }
 
-// 把查詢條件組成 ?sort=title&desc=True&q=…；沒給的條件不放進網址，後端就不會篩選
+    // 沒給的條件不放進網址，後端就不篩選
     private static string ToQueryString(WorkListQuery query)
     {
         var parts = new List<string> { $"sort={query.Sort}", $"desc={query.Desc}" };
 
-        // 搜尋字可能有空白、& 或中文，要轉成網址安全的格式，不然 & 會被當成下一個參數
+        // 搜尋字裡的 & 不轉換的話會被當成下一個參數
         if (!string.IsNullOrWhiteSpace(query.Q))
             parts.Add($"q={Uri.EscapeDataString(query.Q.Trim())}");
         if (query.Favorite is { } favorite)
@@ -41,7 +39,6 @@ public class WorksApiClient
     /// <summary>POST /api/works：新增作品，回傳建立好的作品（含新的 Id）。驗證失敗丟 ApiValidationException。</summary>
     public async Task<WorkItem> CreateAsync(SaveWorkRequest request)
     {
-        // 把 request 轉成 JSON，用 POST 送出
         var response = await _http.PostAsJsonAsync("api/works", request);
         await EnsureSuccessAsync(response);
         return (await response.Content.ReadFromJsonAsync<WorkItem>())!;
@@ -61,13 +58,12 @@ public class WorksApiClient
         await EnsureSuccessAsync(response);
     }
 
-// 400 是使用者可以自己修正的錯誤，轉成驗證例外；其他失敗交給 EnsureSuccessStatusCode 丟出 HttpRequestException
+    // 400 是使用者可以修正的錯誤，轉成驗證例外；其他失敗由 EnsureSuccessStatusCode 丟出 HttpRequestException
     private static async Task EnsureSuccessAsync(HttpResponseMessage response)
     {
         if (response.StatusCode == HttpStatusCode.BadRequest)
         {
-            // 400 的回應長這樣：{ "errors": { "TitleZh": ["至少輸入一個名稱"], "TitleJa": [...] } }
-            // 同一句訊息可能掛在好幾個欄位上，攤平後去掉重複
+            // { "errors": { "TitleZh": ["至少輸入一個名稱"], ... } }；同一句訊息可能掛在好幾個欄位上，所以去重複
             var problem = await response.Content.ReadFromJsonAsync<ValidationProblem>();
             var messages = problem?.Errors.Values.SelectMany(m => m).Distinct().ToList()
                            ?? ["輸入的資料有誤"];
@@ -83,10 +79,10 @@ public class WorksApiClient
     /// </summary>
     public async Task<StoreWorkInfo> LookupAsync(string url)
     {
-        // 網址裡又放了一個網址：Steam 網址裡的 & ? / 不轉換的話，& 會被當成外層網址的下一個參數
+        // 網址裡又放了一個網址，裡面的 & 要轉換
         var response = await _http.GetAsync($"api/lookup?url={Uri.EscapeDataString(url)}");
 
-        // LookupController 的 400／404／502 內容都是一段純文字，不是 EnsureSuccessAsync 處理的 { "errors": … } 格式
+        // LookupController 的錯誤是純文字，不是 { "errors": … } 格式
         if (!response.IsSuccessStatusCode)
         {
             var message = await response.Content.ReadAsStringAsync();
@@ -102,6 +98,6 @@ public class WorksApiClient
         return await _http.GetFromJsonAsync<List<WorkTypeItem>>("api/work-types") ?? [];
     }
 
-// ASP.NET Core 驗證失敗時回傳的 JSON 裡，只需要 errors 這個欄位
+    // ASP.NET Core 驗證失敗的回應，只取 errors
     private record ValidationProblem(Dictionary<string, string[]> Errors);
 }

@@ -8,12 +8,10 @@ namespace Library.UnitTests;
 /// SteamSource 的單元測試：用假的 HttpMessageHandler 取代網路，不會真的連到 Steam。
 /// </summary>
 /// <remarks>
-/// HttpClient 只是外殼，真正送出請求的是裡面的 handler；把它換成假的，就能決定「Steam」回傳什麼。
 /// JSON 的欄位名稱對不上時不會報錯，只會得到預設值，所以每個欄位都要斷言。
 /// </remarks>
 public class SteamSourceTests
 {
-    // 假的 HttpMessageHandler：不連網路，把請求交給 respond 決定回傳什麼
     private class FakeHandler(Func<HttpRequestMessage, string> respond) : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -34,7 +32,6 @@ public class SteamSourceTests
             return jsonForLanguage(language);
         }))
         {
-            // 正式執行時在 DI 設定，測試不經過 DI，要自己設
             BaseAddress = new Uri("https://store.steampowered.com/")
         });
 
@@ -80,11 +77,10 @@ public class SteamSourceTests
     [InlineData("https://store.steampowered.com/app/620", true)]
     [InlineData("https://store.steampowered.com/search/?term=portal", false)]
     [InlineData("https://www.dlsite.com/maniax/work/=/product_id/RJ123.html", false)]
-    // 網址裡有 steampowered 但網域不對：確認比對的是 Host，不是整個網址的文字
+    // 網址裡有 steampowered 但網域不對：比對的要是 Host
     [InlineData("https://evil.com/app/620?steampowered", false)]
     public void CanHandle_ChecksHostAndPath(string url, bool expected)
     {
-        // CanHandle 不連網路，給一般的 HttpClient 就好
         var source = new SteamSource(new HttpClient());
 
         var result = source.CanHandle(new Uri(url));
@@ -127,8 +123,7 @@ public class SteamSourceTests
 
         var result = await source.FetchAsync(new Uri("https://store.steampowered.com/app/620"));
 
-        // InlineData 只能放常數，預期的日期用字串傳進來再轉成 DateOnly?，和結果用同一個型別比較
-        // result! 而不是 result?.：整個抓取失敗（null）時要讓測試失敗，不能和預期的 null 混在一起
+        // InlineData 只能放常數，日期用字串傳進來；用 result! 讓整個抓取失敗時測試也失敗
         var expectedDate = expected is null ? (DateOnly?)null : DateOnly.Parse(expected);
         Assert.Equal(expectedDate, result!.ReleaseDate);
     }
