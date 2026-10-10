@@ -20,6 +20,7 @@ public static class DependencyInjection
     {
         // 有人要 WorkService 時 new 一個給他；Scoped = 每個 HTTP 請求一個，請求結束就丟掉
         services.AddScoped<WorkService>();
+        services.AddScoped<WorkTypeService>();
 
         // 有人要 TimeProvider 時給系統時鐘；Singleton = 整個程式共用一個（時鐘沒有狀態，共用沒問題）
         services.AddSingleton(TimeProvider.System);

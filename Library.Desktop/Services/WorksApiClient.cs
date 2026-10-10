@@ -96,6 +96,12 @@ public class WorksApiClient
         return (await response.Content.ReadFromJsonAsync<StoreWorkInfo>())!;
     }
 
+    /// <summary>GET /api/work-types：類型清單，依顯示順序排好。</summary>
+    public async Task<List<WorkTypeItem>> GetWorkTypesAsync()
+    {
+        return await _http.GetFromJsonAsync<List<WorkTypeItem>>("api/work-types") ?? [];
+    }
+
 // ASP.NET Core 驗證失敗時回傳的 JSON 裡，只需要 errors 這個欄位
     private record ValidationProblem(Dictionary<string, string[]> Errors);
 }

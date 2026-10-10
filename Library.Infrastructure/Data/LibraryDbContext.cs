@@ -5,56 +5,68 @@ using Microsoft.EntityFrameworkCore;
 namespace Library.Infrastructure.Data;
 
 /// <summary>
-/// 和資料庫溝通的窗口（EF Core）。實作 Application 的 ILibraryDbContext。
+/// EF Core 的 DbContext，實作 ILibraryDbContext。登記成 Scoped，每個 HTTP 請求一個。
 /// </summary>
-/// <remarks>
-/// 負責：知道有哪些表、把 LINQ 翻譯成 SQL、記住查出來的物件被改了什麼（追蹤）、SaveChanges 時寫回資料庫。
-/// 不是執行緒安全的，所以登記成 Scoped：每個 HTTP 請求各用一個。
-/// </remarks>
 public class LibraryDbContext : DbContext, ILibraryDbContext
 {
-    // options 裡有「連哪個資料庫、用什麼驅動」，由 AddInfrastructure 設定好再透過 DI 傳進來
     public LibraryDbContext(DbContextOptions<LibraryDbContext> options) : base(options)
     {
     }
 
-    /// <summary>Works 資料表。</summary>
     public DbSet<Work> Works => Set<Work>();
 
-    /// <summary>Creators 資料表。</summary>
     public DbSet<Creator> Creators => Set<Creator>();
 
+    public DbSet<WorkType> WorkTypes => Set<WorkType>();
+
     /// <summary>
-    /// Work 類別上寫不出來的資料庫設定放在這裡。修改後要跑 Migration（全域過濾器除外）。
+    /// 慣例和屬性標記寫不出來的資料庫設定。修改結構後要產生 Migration。
     /// </summary>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // CHECK 約束：三種名稱至少一個不是空字串。資料庫的最後一道防線，就算程式有 bug 也寫不進無名資料
+        // 三種名稱至少一個不是空字串；就算程式有 bug 也寫不進無名資料
         modelBuilder.Entity<Work>().ToTable(t =>
             t.HasCheckConstraint("CK_Works_HasTitle",
                 "[TitleZh] <> N'' OR [TitleJa] <> N'' OR [TitleEn] <> N''"));
 
-        // 全域查詢過濾器：所有查 Works 的查詢都自動加上「沒被刪除」，不用每個地方自己記得加
-        // 要查已刪除的資料時，在查詢加 .IgnoreQueryFilters()
+        // 軟刪除：所有查詢自動排除已刪除的作品，要查已刪除的用 IgnoreQueryFilters()
         modelBuilder.Entity<Work>().HasQueryFilter(w => !w.DeletedAt.HasValue);
 
-        // 主要名稱由資料庫依中 → 日 → 英計算並存起來，才能用在排序和查詢裡
+        // 主要名稱由資料庫計算並存起來，才能用在排序和查詢裡
         modelBuilder.Entity<Work>()
             .Property(w => w.Title)
             .HasComputedColumnSql("COALESCE(NULLIF([TitleZh], N''), NULLIF([TitleJa], N''), [TitleEn])", stored: true);
 
-        // 沒有 DbSet 的類別預設用類別名稱當表名（單數），這裡指定成複數，和 Works、Creators 一致
         // 複合主鍵包含 Role：同一個人在同一部作品可以同時是作者和社團
-        modelBuilder.Entity<WorkCreator>().ToTable("WorkCreators").HasKey(wc => new { wc.WorkId, wc.CreatorId, wc.Role });
+        modelBuilder.Entity<WorkCreator>().ToTable("WorkCreators")
+            .HasKey(wc => new { wc.WorkId, wc.CreatorId, wc.Role });
 
-        // 和 Work 的軟刪除過濾器配對：從 creator.Works 方向查時，也看不到已刪除作品的關聯
+        // 和 Work 的軟刪除配對：從 creator.Works 方向查時也看不到已刪除作品
         modelBuilder.Entity<WorkCreator>().HasQueryFilter(wc => wc.Work.DeletedAt == null);
 
-        // 同一個名字只能有一筆，是 find-or-create 的最後一道防線；SQL Server 預設不分大小寫，Valve 和 valve 視為同一個
+        // SQL Server 預設不分大小寫，Valve 和 valve 視為同一個
         modelBuilder.Entity<Creator>().HasIndex(c => c.Name).IsUnique();
+
+        modelBuilder.Entity<WorkType>().HasIndex(t => t.Name).IsUnique();
+
+        // 外鍵由命名慣例推出；預設 Cascade 會連作品一起刪，改成 Restrict
+        modelBuilder.Entity<Work>()
+            .HasOne(w => w.WorkType)
+            .WithMany(t => t.Works)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // 預設類型。已套用的種子資料不要再改：之後的 Migration 會產生 UPDATE／DELETE 覆蓋使用者的修改
+        modelBuilder.Entity<WorkType>().HasData(
+            new WorkType { Id = 1, Name = "漫畫", SortOrder = 0 },
+            new WorkType { Id = 2, Name = "動畫", SortOrder = 1 },
+            new WorkType { Id = 3, Name = "影片", SortOrder = 2 },
+            new WorkType { Id = 4, Name = "遊戲", SortOrder = 3 },
+            new WorkType { Id = 5, Name = "ASMR", SortOrder = 4 },
+            new WorkType { Id = 6, Name = "其他", SortOrder = 99 }
+        );
     }
 
-    // 所有 DateTime 欄位讀出來時都標記為 UTC（見 UtcDateTimeConverter）
+    // 所有 DateTime 讀出時標記為 UTC，JSON 才會帶 Z
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
         configurationBuilder.Properties<DateTime>().HaveConversion<UtcDateTimeConverter>();

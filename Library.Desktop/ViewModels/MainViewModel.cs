@@ -60,6 +60,12 @@ public partial class MainViewModel : ObservableObject
     // ObservableCollection：項目增減時會自動通知畫面，表格跟著更新
     public ObservableCollection<WorkItem> Works { get; } = [];
 
+    /// <summary>類型下拉選單的選項，依顯示順序排列。</summary>
+    public ObservableCollection<WorkTypeItem> WorkTypes { get; } = [];
+
+    // 新增作品時預設第一個類型；清單是空的時給 0，存檔時由 API 回 400，而不是讓程式當掉
+    private int DefaultWorkTypeId => WorkTypes.FirstOrDefault()?.Id ?? 0;
+
     // [ObservableProperty] 會自動產生 StatusMessage 屬性，值改變時通知畫面
     [ObservableProperty]
     private string _statusMessage = "";
@@ -72,6 +78,10 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private async Task LoadAsync()
     {
+        // 啟動時 API 還沒開的話類型是空的，之後按「重新載入」時補讀
+        if (WorkTypes.Count == 0)
+            await LoadWorkTypesAsync();
+
         StatusMessage = "載入中…";
         try
         {
@@ -99,6 +109,31 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
+    /// <summary>
+    /// 從 API 讀取類型清單。類型很少變動，只在清單還是空的時候由 LoadAsync 呼叫，不隨篩選重讀。
+    /// </summary>
+    [RelayCommand]
+    private async Task LoadWorkTypesAsync()
+    {
+        try
+        {
+            var workType = await _api.GetWorkTypesAsync();
+            WorkTypes.Clear();
+            foreach (var type in workType)
+            {
+                WorkTypes.Add(type);
+            }
+
+            // 選項讀進來之後才有預設值可以給；正在編輯作品時保留它原本的類型
+            if (EditingId == null)
+                WorkTypeId = DefaultWorkTypeId;
+        }
+        catch (HttpRequestException)
+        {
+            StatusMessage = "連不上 API，請確認 Library.Api 有在執行";
+        }
+    }
+
     // 表格目前選取的作品（DataGrid 的 SelectedItem 繫結到這裡）
     [ObservableProperty]
     private WorkItem? _selectedWork;
@@ -119,9 +154,12 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private int _score;
     [ObservableProperty] private bool _favorite;
     [ObservableProperty] private bool _purchased;
+    // 類型下拉選單以 SelectedValue 繫結到這裡（比對選項的 Id）
+    [ObservableProperty] private int _workTypeId;
     // TextBox 只能繫結一個字串，所以作者、社團在表單裡是「一行一個名字」的文字，送出時才用 SplitLines 切成清單
     [ObservableProperty] private string _authorsInput = "";
     [ObservableProperty] private string _circlesInput = "";
+
     // 商店網址：只用來抓取資料填表單，不會存進作品
     [ObservableProperty] private string _storeUrl = "";
 
@@ -151,6 +189,7 @@ public partial class MainViewModel : ObservableObject
         Score = value.Score;
         Favorite = value.Favorite;
         Purchased = value.Purchased;
+        WorkTypeId = value.WorkTypeId;
         AuthorsInput = string.Join("\n", value.Authors);
         CirclesInput = string.Join("\n", value.Circles);
         ErrorMessage = "";
@@ -170,6 +209,7 @@ public partial class MainViewModel : ObservableObject
         Score = 0;
         Favorite = false;
         Purchased = false;
+        WorkTypeId = DefaultWorkTypeId;
         AuthorsInput = "";
         CirclesInput = "";
         StoreUrl = "";
@@ -186,7 +226,9 @@ public partial class MainViewModel : ObservableObject
         var request = new SaveWorkRequest(
             TitleZh, TitleJa, TitleEn, Remark,
             ReleaseDate is { } date ? DateOnly.FromDateTime(date) : null,
-            Score, Favorite, Purchased, SplitLines(AuthorsInput), SplitLines(CirclesInput));
+            Score, Favorite, Purchased, SplitLines(AuthorsInput), SplitLines(CirclesInput),
+            WorkTypeId
+        );
 
         try
         {

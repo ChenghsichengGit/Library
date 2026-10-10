@@ -21,7 +21,9 @@ public record WorkItem(
     DateOnly? ReleaseDate,
     DateTime CreatedAt,
     string[] Authors,
-    string[] Circles)
+    string[] Circles,
+    int WorkTypeId,
+    string WorkType)
 {
     // 下面這些只有 get 的屬性只給畫面顯示用：JSON 轉換時會忽略，也不會送回 API
 

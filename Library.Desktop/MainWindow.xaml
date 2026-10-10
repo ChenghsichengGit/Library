@@ -75,13 +75,16 @@
             <TextBlock Text="社團/發行商 (一行一個)" />
             <TextBox Text="{Binding CirclesInput, UpdateSourceTrigger=PropertyChanged}"
                      Height="50" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Margin="0,2,0,8" />
-            <TextBlock Text="上架日期" />
-            <DatePicker SelectedDate="{Binding ReleaseDate}" Margin="0,2,0,8" />
+            <TextBlock Text="類型" />
+            <ComboBox ItemsSource="{Binding WorkTypes}" DisplayMemberPath="Name" SelectedValuePath="Id"
+                      SelectedValue="{Binding WorkTypeId}" Margin="0,2,0,8" />
             <TextBlock Text="評分（6 是王冠）" />
             <!-- 選項來自 ScoreOptions，選中的值同步到 Score -->
             <ComboBox ItemsSource="{Binding ScoreOptions}" SelectedItem="{Binding Score}" Margin="0,2,0,8" />
             <CheckBox Content="最愛" IsChecked="{Binding Favorite}" Margin="0,0,0,4" />
             <CheckBox Content="已購買" IsChecked="{Binding Purchased}" Margin="0,0,0,8" />
+            <TextBlock Text="上架日期" />
+            <DatePicker SelectedDate="{Binding ReleaseDate}" Margin="0,2,0,8" />
             <TextBlock Text="備註" />
             <TextBox Text="{Binding Remark, UpdateSourceTrigger=PropertyChanged}"
                      Height="60" TextWrapping="Wrap" AcceptsReturn="True" Margin="0,2,0,8" />
@@ -103,6 +106,7 @@
                 <DataGridTextColumn Header="作品名" Binding="{Binding Title}" Width="*" />
                 <DataGridTextColumn Header="作者" Binding="{Binding AuthorsText}" Width="*" />
                 <DataGridTextColumn Header="社團" Binding="{Binding CirclesText}" Width="*" />
+                <DataGridTextColumn Header="類型" Binding="{Binding WorkType}" Width="*" />
                 <DataGridTextColumn Header="評分" Binding="{Binding ScoreText}" Width="80" />
                 <DataGridCheckBoxColumn Header="最愛" Binding="{Binding Favorite}" Width="50" />
                 <DataGridCheckBoxColumn Header="已購買" Binding="{Binding Purchased}" Width="60" />
