@@ -62,7 +62,7 @@ public class LibraryDbContext : DbContext, ILibraryDbContext
             new WorkType { Id = 3, Name = "影片", SortOrder = 2 },
             new WorkType { Id = 4, Name = "遊戲", SortOrder = 3 },
             new WorkType { Id = 5, Name = "ASMR", SortOrder = 4 },
-            new WorkType { Id = 6, Name = "其他", SortOrder = 99 }
+            new WorkType { Id = WorkType.OtherId, Name = "其他", SortOrder = 99 }
         );
     }
 

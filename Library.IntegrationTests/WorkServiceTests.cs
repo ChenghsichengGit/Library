@@ -2,7 +2,6 @@
 using Library.Application.Exceptions;
 using Library.Application.Services;
 using Library.Infrastructure.Data;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Time.Testing;
 
@@ -17,37 +16,12 @@ namespace Library.IntegrationTests;
 /// 不經過 Controller，所以沒有 [ApiController] 的驗證。
 /// </remarks>
 [Collection("SqlServer")]
-public class WorkServiceTests : IAsyncLifetime
+public class WorkServiceTests(SqlServerFixture fixture) : DatabaseTestBase(fixture)
 {
-    private readonly string _connectionString;
-
     // 時間固定在 2026-01-01 12:00 UTC，斷言才能精確比對
     private readonly FakeTimeProvider _time = new(new DateTimeOffset(2026, 1, 1, 12, 0, 0, TimeSpan.Zero));
 
-    private LibraryDbContext CreateDbContext() =>
-        new(new DbContextOptionsBuilder<LibraryDbContext>().UseSqlServer(_connectionString).Options);
-
     private WorkService CreateService(LibraryDbContext db) => new(db, _time);
-
-    public WorkServiceTests(SqlServerFixture fixture)
-    {
-        _connectionString = new SqlConnectionStringBuilder(fixture.ConnectionString)
-        {
-            InitialCatalog = $"LibraryTest_{Guid.NewGuid():N}"
-        }.ConnectionString;
-    }
-
-    public async Task InitializeAsync()
-    {
-        await using var db = CreateDbContext();
-        await db.Database.MigrateAsync();
-    }
-
-    public async Task DisposeAsync()
-    {
-        await using var db = CreateDbContext();
-        await db.Database.EnsureDeletedAsync();
-    }
 
     [Fact]
     public async Task CreateAsync_SetsCreatedAtToCurrentTime()

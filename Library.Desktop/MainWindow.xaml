@@ -11,6 +11,7 @@
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
             <Button Content="重新載入" Command="{Binding LoadCommand}" Padding="12,4" />
             <Button Content="新增" Command="{Binding NewCommand}" Padding="12,4" Margin="8,0,0,0" />
+            <Button Content="管理類型" Command="{Binding ManageWorkTypesCommand}" Padding="12,4" Margin="8,0,0,0" />
             <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center" Margin="12,0,0,0" />
         </StackPanel>
 

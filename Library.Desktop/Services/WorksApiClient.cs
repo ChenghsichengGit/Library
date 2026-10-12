@@ -70,6 +70,13 @@ public class WorksApiClient
             throw new ApiValidationException(messages);
         }
 
+        // 409（名稱重複等）的內容是純文字，不是 { "errors": … }
+        if (response.StatusCode == HttpStatusCode.Conflict)
+        {
+            var message = await response.Content.ReadAsStringAsync();
+            throw new ApiValidationException([message]);
+        }
+
         response.EnsureSuccessStatusCode();
     }
 
@@ -96,6 +103,30 @@ public class WorksApiClient
     public async Task<List<WorkTypeItem>> GetWorkTypesAsync()
     {
         return await _http.GetFromJsonAsync<List<WorkTypeItem>>("api/work-types") ?? [];
+    }
+
+    /// <summary>POST /api/work-types：新增類型。名稱空白或重複丟 ApiValidationException。</summary>
+    public async Task<WorkTypeItem> CreateWorkTypeAsync(string name, int? sortOrder)
+    {
+        var response = await _http.PostAsJsonAsync("api/work-types",
+            new SaveWorkTypeRequest(name, sortOrder));
+        await EnsureSuccessAsync(response);
+        return (await response.Content.ReadFromJsonAsync<WorkTypeItem>())!;
+    }
+
+    /// <summary>PUT /api/work-types/{id}：修改名稱與順序。</summary>
+    public async Task UpdateWorkTypeAsync(int id, string name, int? sortOrder)
+    {
+        var response = await _http.PutAsJsonAsync($"api/work-types/{id}",
+            new SaveWorkTypeRequest(name, sortOrder));
+        await EnsureSuccessAsync(response);
+    }
+
+    /// <summary>DELETE /api/work-types/{id}：刪除類型，使用它的作品改成「其他」。刪除「其他」丟 ApiValidationException。</summary>
+    public async Task DeleteWorkTypeAsync(int id)
+    {
+        var response = await _http.DeleteAsync($"api/work-types/{id}");
+        await EnsureSuccessAsync(response);
     }
 
     // ASP.NET Core 驗證失敗的回應，只取 errors

@@ -132,14 +132,19 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private string _titleZh = "";
     [ObservableProperty] private string _titleJa = "";
     [ObservableProperty] private string _titleEn = "";
+
     [ObservableProperty] private string _remark = "";
+
     // DatePicker 只認識 DateTime，送出時再轉成 DateOnly
     [ObservableProperty] private DateTime? _releaseDate;
     [ObservableProperty] private int _score;
     [ObservableProperty] private bool _favorite;
+
     [ObservableProperty] private bool _purchased;
+
     // 類型下拉選單以 SelectedValue 繫結到這裡（比對選項的 Id）
     [ObservableProperty] private int _workTypeId;
+
     // 作者、社團在表單裡是一行一個名字，送出時才用 SplitLines 切成清單
     [ObservableProperty] private string _authorsInput = "";
     [ObservableProperty] private string _circlesInput = "";
@@ -298,6 +303,23 @@ public partial class MainViewModel : ObservableObject
         {
             ErrorMessage = "查詢失敗，請確認 Library.Api 有在執行";
         }
+    }
+
+    /// <summary>
+    /// 「管理類型」：開啟類型管理視窗，關閉後重新讀取類型與作品（類型可能被改名或刪除）。
+    /// </summary>
+    [RelayCommand]
+    private async Task ManageWorkTypesAsync()
+    {
+        _dialog.ShowWorkTypeManager();
+
+        // LoadAsync 只在類型清單是空的時候才讀，所以先自己讀
+        await LoadWorkTypesAsync();
+        await LoadAsync();
+
+        // 編輯中的作品重新帶入表單：它的類型若被刪除，已在資料庫改成「其他」
+        if (EditingId is { } id)
+            SelectedWork = Works.FirstOrDefault(w => w.Id == id);
     }
 
     private bool CanDelete() => EditingId is not null;

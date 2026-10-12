@@ -3,10 +3,13 @@ using System.ComponentModel.DataAnnotations;
 namespace Library.Domain.Entities;
 
 /// <summary>
-/// 作品類型（漫畫、動畫……），可自訂。名稱唯一；還有作品使用的類型不能刪除。
+/// 作品類型（漫畫、動畫……），可自訂。名稱唯一。
 /// </summary>
 public class WorkType
 {
+    /// <summary>「其他」的 Id（種子資料）：沒有合適類型時使用，不能刪除；刪除其他類型時作品會改成它。</summary>
+    public const int OtherId = 6;
+
     public int Id { get; set; }
 
     [MaxLength(32)]
