@@ -152,6 +152,8 @@ public partial class MainViewModel : ObservableObject
             // 選項讀進來之後才有預設值可以給；正在編輯作品時保留它原本的類型
             if (EditingId == null)
                 WorkTypeId = DefaultWorkTypeId;
+            // 值沒變時 setter 不會通知，Clear() 後下拉選單要靠這行才會選回來
+            OnPropertyChanged(nameof(WorkTypeId));
         }
         catch (HttpRequestException)
         {
