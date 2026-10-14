@@ -17,6 +17,7 @@ public interface ILibraryDbContext
     DbSet<Creator> Creators { get; }
 
     DbSet<WorkType> WorkTypes { get; }
+    DbSet<Tag> Tags { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

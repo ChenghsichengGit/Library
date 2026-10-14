@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Net.Http;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -36,10 +36,14 @@ public partial class MainViewModel : ObservableObject
     public SortOption[] SortOptions => AllSortOptions;
     public ScoreFilter[] ScoreFilters => AllScoreFilters;
 
+    /// <summary>標籤篩選列的選項，勾選狀態存在各選項裡（ListBox.SelectedItems 無法繫結）。</summary>
+    public ObservableCollection<TagFilterOption> TagFilters { get; } = [];
+
     // 篩選與排序條件（上方工具列）
     [ObservableProperty] private string _searchText = "";
     [ObservableProperty] private bool _onlyFavorite;
     [ObservableProperty] private ScoreFilter _selectedScoreFilter = AllScoreFilters[0];
+    [ObservableProperty] private bool _tagMatchAny;
     [ObservableProperty] private SortOption _selectedSort = AllSortOptions[0];
     [ObservableProperty] private bool _sortDescending = true;
 
@@ -70,6 +74,9 @@ public partial class MainViewModel : ObservableObject
         if (WorkTypes.Count == 0)
             await LoadWorkTypesAsync();
 
+        if (TagFilters.Count == 0)
+            await LoadTagsAsync();
+
         StatusMessage = "載入中…";
         try
         {
@@ -81,7 +88,12 @@ public partial class MainViewModel : ObservableObject
                 MinScore: SelectedScoreFilter.Min,
                 MaxScore: SelectedScoreFilter.Max,
                 Sort: SelectedSort.Value,
-                Desc: SortDescending
+                Desc: SortDescending,
+                Tags: TagFilters
+                    .Where(t => t.IsSelected)
+                    .Select(t => t.Name)
+                    .ToList(),
+                TagAny: TagMatchAny
             );
             var works = await _api.GetWorksAsync(query);
             Works.Clear();
@@ -149,6 +161,8 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private string _authorsInput = "";
     [ObservableProperty] private string _circlesInput = "";
 
+    [ObservableProperty] private string _tagsInput = "";
+
     // 只用來抓取資料填表單，不會存進作品
     [ObservableProperty] private string _storeUrl = "";
 
@@ -176,6 +190,7 @@ public partial class MainViewModel : ObservableObject
         WorkTypeId = value.WorkTypeId;
         AuthorsInput = string.Join("\n", value.Authors);
         CirclesInput = string.Join("\n", value.Circles);
+        TagsInput = string.Join("\n", value.Tags);
         ErrorMessage = "";
     }
 
@@ -196,6 +211,7 @@ public partial class MainViewModel : ObservableObject
         WorkTypeId = DefaultWorkTypeId;
         AuthorsInput = "";
         CirclesInput = "";
+        TagsInput = "";
         StoreUrl = "";
         ErrorMessage = "";
     }
@@ -208,7 +224,7 @@ public partial class MainViewModel : ObservableObject
             TitleZh, TitleJa, TitleEn, Remark,
             ReleaseDate is { } date ? DateOnly.FromDateTime(date) : null,
             Score, Favorite, Purchased, SplitLines(AuthorsInput), SplitLines(CirclesInput),
-            WorkTypeId
+            WorkTypeId, SplitLines(TagsInput)
         );
 
         try
@@ -225,6 +241,8 @@ public partial class MainViewModel : ObservableObject
             }
 
             ErrorMessage = "";
+            // 先更新標籤：LoadAsync 依勾選組查詢條件，已消失的標籤不能再送
+            await LoadTagsAsync();
             await LoadAsync();
 
             // 選回剛儲存的那筆，表單更新成伺服器整理過的內容（例如去掉前後空白）
@@ -254,6 +272,7 @@ public partial class MainViewModel : ObservableObject
         {
             await _api.DeleteAsync(id);
             New();
+            await LoadTagsAsync();
             await LoadAsync();
         }
         catch (ApiValidationException ex)
@@ -322,6 +341,32 @@ public partial class MainViewModel : ObservableObject
             SelectedWork = Works.FirstOrDefault(w => w.Id == id);
     }
 
+    /// <summary>
+    /// 讀取標籤篩選清單，依名稱保留原本的勾選。啟動時及作品儲存、刪除後執行（作品數會變）。
+    /// </summary>
+    private async Task LoadTagsAsync()
+    {
+        try
+        {
+            var selected = TagFilters
+                .Where(t => t.IsSelected)
+                .Select(t => t.Name)
+                .ToHashSet();
+
+            var tags = await _api.GetTagsAsync();
+
+            TagFilters.Clear();
+            foreach (var tag in tags)
+            {
+                TagFilters.Add(new TagFilterOption(tag, selected.Contains(tag.Name), () => LoadCommand.Execute(null)));
+            }
+        }
+        catch (HttpRequestException)
+        {
+            StatusMessage = "連不上 API，請確認 Library.Api 有在執行";
+        }
+    }
+
     private bool CanDelete() => EditingId is not null;
 
     // 篩選或排序一改就重新查詢；搜尋字不在這裡，每打一個字都查太多次
@@ -329,6 +374,7 @@ public partial class MainViewModel : ObservableObject
     partial void OnSelectedScoreFilterChanged(ScoreFilter value) => LoadCommand.Execute(null);
     partial void OnSelectedSortChanged(SortOption value) => LoadCommand.Execute(null);
     partial void OnSortDescendingChanged(bool value) => LoadCommand.Execute(null);
+    partial void OnTagMatchAnyChanged(bool value) => LoadCommand.Execute(null);
 
     // TextBox 的換行是 \r\n，用 \n 切開後靠 TrimEntries 去掉 \r
     private static List<string> SplitLines(string text) =>

@@ -43,6 +43,27 @@ namespace Library.Infrastructure.Migrations
                     b.ToTable("Creators");
                 });
 
+            modelBuilder.Entity("Library.Domain.Entities.Tag", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Tags");
+                });
+
             modelBuilder.Entity("Library.Domain.Entities.Work", b =>
                 {
                     b.Property<int>("Id")
@@ -189,6 +210,21 @@ namespace Library.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("TagWork", b =>
+                {
+                    b.Property<int>("TagsId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("WorksId")
+                        .HasColumnType("int");
+
+                    b.HasKey("TagsId", "WorksId");
+
+                    b.HasIndex("WorksId");
+
+                    b.ToTable("WorkTags", (string)null);
+                });
+
             modelBuilder.Entity("Library.Domain.Entities.Work", b =>
                 {
                     b.HasOne("Library.Domain.Entities.WorkType", "WorkType")
@@ -217,6 +253,21 @@ namespace Library.Infrastructure.Migrations
                     b.Navigation("Creator");
 
                     b.Navigation("Work");
+                });
+
+            modelBuilder.Entity("TagWork", b =>
+                {
+                    b.HasOne("Library.Domain.Entities.Tag", null)
+                        .WithMany()
+                        .HasForeignKey("TagsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Library.Domain.Entities.Work", null)
+                        .WithMany()
+                        .HasForeignKey("WorksId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Library.Domain.Entities.Creator", b =>

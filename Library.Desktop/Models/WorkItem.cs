@@ -1,4 +1,4 @@
-namespace Library.Desktop.Models;
+﻿namespace Library.Desktop.Models;
 
 /// <summary>
 /// 前端的作品資料，對應 API 回傳的 WorkDto。WPF 不引用後端的程式碼，只照 JSON 的格式定義。
@@ -18,7 +18,8 @@ public record WorkItem(
     string[] Authors,
     string[] Circles,
     int WorkTypeId,
-    string WorkType)
+    string WorkType,
+    string[] Tags)
 {
     // 以下只給畫面顯示用
 
@@ -37,4 +38,6 @@ public record WorkItem(
     public string AuthorsText => string.Join("、", Authors);
 
     public string CirclesText => string.Join("、", Circles);
+
+    public string TagsText => string.Join("、", Tags);
 }

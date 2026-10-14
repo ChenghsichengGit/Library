@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using Library.Desktop.Models;
@@ -32,6 +32,12 @@ public class WorksApiClient
             parts.Add($"minScore={min}");
         if (query.MaxScore is { } max)
             parts.Add($"maxScore={max}");
+
+        // 每個標籤各一個 tags=；預設是全部符合，只有「符合任一」才送 tagMode
+        foreach (var tag in query.Tags)
+            parts.Add($"tags={Uri.EscapeDataString(tag)}");
+        if (query.TagAny)
+            parts.Add("tagMode=Any");
 
         return "?" + string.Join("&", parts);
     }
@@ -127,6 +133,12 @@ public class WorksApiClient
     {
         var response = await _http.DeleteAsync($"api/work-types/{id}");
         await EnsureSuccessAsync(response);
+    }
+
+    /// <summary>GET /api/tags：有作品在用的標籤與作品數。</summary>
+    public async Task<List<TagItem>> GetTagsAsync()
+    {
+        return await _http.GetFromJsonAsync<List<TagItem>>("api/tags") ?? [];
     }
 
     // ASP.NET Core 驗證失敗的回應，只取 errors

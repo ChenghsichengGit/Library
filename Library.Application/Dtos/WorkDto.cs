@@ -1,4 +1,4 @@
-using Library.Domain.Entities;
+﻿using Library.Domain.Entities;
 
 namespace Library.Application.Dtos;
 
@@ -20,10 +20,11 @@ public record WorkDto(
     string[] Authors,
     string[] Circles,
     int WorkTypeId,
-    string WorkType)
+    string WorkType,
+    string[] Tags)
 {
     /// <summary>
-    /// 從 Work 建立 WorkDto。查詢時要 Include Creators（含 Creator）與 WorkType。
+    /// 從 Work 建立 WorkDto。查詢時要 Include Creators（含 Creator）、WorkType 與 Tags。
     /// </summary>
     public static WorkDto From(Work w) =>
         new(
@@ -42,5 +43,6 @@ public record WorkDto(
             w.Creators.Where(wc => wc.Role == CreatorRole.Author).Select(wc => wc.Creator.Name).Order().ToArray(),
             w.Creators.Where(wc => wc.Role == CreatorRole.Circle).Select(wc => wc.Creator.Name).Order().ToArray(),
             w.WorkTypeId,
-            w.WorkType.Name);
+            w.WorkType.Name,
+            w.Tags.Select(t => t.Name).Order().ToArray());
 }

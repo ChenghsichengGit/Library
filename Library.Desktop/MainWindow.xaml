@@ -1,8 +1,9 @@
-<Window x:Class="Library.Desktop.MainWindow"
+﻿<Window x:Class="Library.Desktop.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:Library.Desktop.ViewModels"
         xmlns:local="clr-namespace:Library.Desktop"
         mc:Ignorable="d"
         Title="MainWindow" Height="700" Width="1200">
@@ -37,51 +38,72 @@
             <CheckBox Content="降冪" IsChecked="{Binding SortDescending}" VerticalAlignment="Center" Margin="8,0,0,0" />
         </StackPanel>
 
-        <!-- 右側：編輯表單 -->
-        <StackPanel DockPanel.Dock="Right" Width="260" Margin="8,0,0,0">
-            <TextBlock Text="商店網址" />
-            <DockPanel Margin="0,2,0,8">
-                <Button DockPanel.Dock="Right" Content="抓取" Command="{Binding FetchCommand}"
-                        Padding="10,0" Margin="4,0,0,0" />
-                <TextBox Text="{Binding StoreUrl, UpdateSourceTrigger=PropertyChanged}"
-                         VerticalContentAlignment="Center">
-                    <TextBox.InputBindings>
-                        <KeyBinding Key="Enter" Command="{Binding FetchCommand}" />
-                    </TextBox.InputBindings>
-                </TextBox>
-            </DockPanel>
-            <!-- 上面是「從商店抓資料」，下面才是要存的表單 -->
-            <Separator Margin="0,0,0,8" />
-            <TextBlock Text="中文名稱" />
-            <TextBox Text="{Binding TitleZh, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" />
-            <TextBlock Text="日文名稱" />
-            <TextBox Text="{Binding TitleJa, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" />
-            <TextBlock Text="英文名稱" />
-            <TextBox Text="{Binding TitleEn, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" />
-            <!-- 不加 TextWrapping：長名字自動折行會看起來像兩個名字 -->
-            <TextBlock Text="作者/開發人員 (一行一個)" />
-            <TextBox Text="{Binding AuthorsInput, UpdateSourceTrigger=PropertyChanged}"
-                     Height="50" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Margin="0,2,0,8" />
-            <TextBlock Text="社團/發行商 (一行一個)" />
-            <TextBox Text="{Binding CirclesInput, UpdateSourceTrigger=PropertyChanged}"
-                     Height="50" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Margin="0,2,0,8" />
-            <TextBlock Text="類型" />
-            <ComboBox ItemsSource="{Binding WorkTypes}" DisplayMemberPath="Name" SelectedValuePath="Id"
-                      SelectedValue="{Binding WorkTypeId}" Margin="0,2,0,8" />
-            <TextBlock Text="評分（6 是王冠）" />
-            <ComboBox ItemsSource="{Binding ScoreOptions}" SelectedItem="{Binding Score}" Margin="0,2,0,8" />
-            <CheckBox Content="最愛" IsChecked="{Binding Favorite}" Margin="0,0,0,4" />
-            <CheckBox Content="已購買" IsChecked="{Binding Purchased}" Margin="0,0,0,8" />
-            <TextBlock Text="上架日期" />
-            <DatePicker SelectedDate="{Binding ReleaseDate}" Margin="0,2,0,8" />
-            <TextBlock Text="備註" />
-            <TextBox Text="{Binding Remark, UpdateSourceTrigger=PropertyChanged}"
-                     Height="60" TextWrapping="Wrap" AcceptsReturn="True" Margin="0,2,0,8" />
-            <Button Content="儲存" Command="{Binding SaveCommand}" Padding="12,4" />
-            <Button Content="刪除" Command="{Binding DeleteCommand}" Padding="12,4" Margin="0,8,0,0" />
-            <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" TextWrapping="Wrap" Margin="0,8,0,0" />
-        </StackPanel>
-
+        <!-- 標籤篩選：DataType 讓 Rider 檢查樣板內的繫結名稱 -->
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+            <TextBlock DockPanel.Dock="Left" Text="標籤" Margin="0,0,6,0" />
+            <CheckBox DockPanel.Dock="Right" Content="符合任一" IsChecked="{Binding TagMatchAny}" />
+            <ItemsControl ItemsSource="{Binding TagFilters}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type vm:TagFilterOption}">
+                        <CheckBox Content="{Binding Label}" IsChecked="{Binding IsSelected}" Margin="0,0,12,4" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </DockPanel>
+        <!-- 右側：編輯表單，比視窗高時可捲動 -->
+        <ScrollViewer DockPanel.Dock="Right" Width="260" Margin="8,0,0,0" VerticalScrollBarVisibility="Auto">
+            <StackPanel DockPanel.Dock="Right" Width="260" Margin="8,0,0,0">
+                <TextBlock Text="商店網址" />
+                <DockPanel Margin="0,2,0,8">
+                    <Button DockPanel.Dock="Right" Content="抓取" Command="{Binding FetchCommand}"
+                            Padding="10,0" Margin="4,0,0,0" />
+                    <TextBox Text="{Binding StoreUrl, UpdateSourceTrigger=PropertyChanged}"
+                             VerticalContentAlignment="Center">
+                        <TextBox.InputBindings>
+                            <KeyBinding Key="Enter" Command="{Binding FetchCommand}" />
+                        </TextBox.InputBindings>
+                    </TextBox>
+                </DockPanel>
+                <!-- 上面是「從商店抓資料」，下面才是要存的表單 -->
+                <Separator Margin="0,0,0,8" />
+                <TextBlock Text="中文名稱" />
+                <TextBox Text="{Binding TitleZh, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" />
+                <TextBlock Text="日文名稱" />
+                <TextBox Text="{Binding TitleJa, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" />
+                <TextBlock Text="英文名稱" />
+                <TextBox Text="{Binding TitleEn, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" />
+                <!-- 不加 TextWrapping：長名字自動折行會看起來像兩個名字 -->
+                <TextBlock Text="作者/開發人員 (一行一個)" />
+                <TextBox Text="{Binding AuthorsInput, UpdateSourceTrigger=PropertyChanged}"
+                         Height="50" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Margin="0,2,0,8" />
+                <TextBlock Text="社團/發行商 (一行一個)" />
+                <TextBox Text="{Binding CirclesInput, UpdateSourceTrigger=PropertyChanged}"
+                         Height="50" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Margin="0,2,0,8" />
+                <TextBlock Text="類型" />
+                <ComboBox ItemsSource="{Binding WorkTypes}" DisplayMemberPath="Name" SelectedValuePath="Id"
+                          SelectedValue="{Binding WorkTypeId}" Margin="0,2,0,8" />
+                <TextBlock Text="標籤 (一行一個)" />
+                <TextBox Text="{Binding TagsInput, UpdateSourceTrigger=PropertyChanged}"
+                         Height="50" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Margin="0,2,0,8" />
+                <TextBlock Text="評分（6 是王冠）" />
+                <ComboBox ItemsSource="{Binding ScoreOptions}" SelectedItem="{Binding Score}" Margin="0,2,0,8" />
+                <CheckBox Content="最愛" IsChecked="{Binding Favorite}" Margin="0,0,0,4" />
+                <CheckBox Content="已購買" IsChecked="{Binding Purchased}" Margin="0,0,0,8" />
+                <TextBlock Text="上架日期" />
+                <DatePicker SelectedDate="{Binding ReleaseDate}" Margin="0,2,0,8" />
+                <TextBlock Text="備註" />
+                <TextBox Text="{Binding Remark, UpdateSourceTrigger=PropertyChanged}"
+                         Height="60" TextWrapping="Wrap" AcceptsReturn="True" Margin="0,2,0,8" />
+                <Button Content="儲存" Command="{Binding SaveCommand}" Padding="12,4" />
+                <Button Content="刪除" Command="{Binding DeleteCommand}" Padding="12,4" Margin="0,8,0,0" />
+                <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" TextWrapping="Wrap" Margin="0,8,0,0" />
+            </StackPanel>
+        </ScrollViewer>
         <!-- 作品表格放最後，填滿剩下的空間 -->
         <!-- 關掉點標題排序：排序在資料庫做，點標題只會排已載入的部分 -->
         <DataGrid ItemsSource="{Binding Works}" SelectedItem="{Binding SelectedWork}" IsReadOnly="True"
@@ -91,6 +113,7 @@
                 <DataGridTextColumn Header="作者" Binding="{Binding AuthorsText}" Width="*" />
                 <DataGridTextColumn Header="社團" Binding="{Binding CirclesText}" Width="*" />
                 <DataGridTextColumn Header="類型" Binding="{Binding WorkType}" Width="*" />
+                <DataGridTextColumn Header="標籤" Binding="{Binding TagsText}" Width="*" />
                 <DataGridTextColumn Header="評分" Binding="{Binding ScoreText}" Width="80" />
                 <DataGridCheckBoxColumn Header="最愛" Binding="{Binding Favorite}" Width="50" />
                 <DataGridCheckBoxColumn Header="已購買" Binding="{Binding Purchased}" Width="60" />

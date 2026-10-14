@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace Library.Application.Dtos;
 
@@ -25,6 +25,12 @@ public class WorkQuery : IValidatableObject
 
     [Range(0, 6)]
     public int? MaxScore { get; set; }
+
+    /// <summary>標籤名稱，網址寫成 ?tags=A&amp;tags=B。比對方式由 TagMode 決定。</summary>
+    public List<string>? Tags { get; set; }
+
+    [EnumDataType(typeof(TagMatch))]
+    public TagMatch TagMode { get; set; } = TagMatch.All;
 
     // EnumDataType 擋下 ?sort=99 這種轉得過去但沒定義的值
     [EnumDataType(typeof(WorkSort))]

@@ -54,20 +54,20 @@ dotnet ef database update --project Library.Infrastructure --startup-project Lib
 
 ## 進度
 
-已完成：作品 CRUD API、分層架構、單元與整合測試（Testcontainers）、Docker、CI、WPF 的清單與新增／修改／刪除、搜尋、篩選與排序（主要名稱為 SQL Server 計算欄位；WPF 也有對應的工具列）、API 時間標明 UTC、WPF 表格欄位與當地時間顯示、作者與社團（多對多，`Creators` 一張表以 `WorkCreators.Role` 區分；API 只收發名字，WPF 一行一個）、外部來源 Steam（`IStoreSource` 抽象、`IHttpClientFactory`、假 handler 單元測試；`GET /api/lookup` 查詢，WPF 貼網址「抓取」填表單，不存檔）、作品類型（`WorkTypes` 一對多、`Restrict`、種子資料；作品必填 `workTypeId`、可依類型篩選；類型管理 `POST／PUT／DELETE /api/work-types`：名稱重複回 409、沒給 `SortOrder` 時排在「其他」前面、「其他」（`WorkType.OtherId`）不能刪除、刪除類型時作品（含最近刪除的）改成「其他」；WPF 表格的類型欄、表單的類型下拉選單與類型管理視窗；整合測試的資料庫準備抽成 `DatabaseTestBase`）。
+已完成：作品 CRUD API、分層架構、單元與整合測試（Testcontainers）、Docker、CI、WPF 的清單與新增／修改／刪除、搜尋、篩選與排序（主要名稱為 SQL Server 計算欄位；WPF 也有對應的工具列）、API 時間標明 UTC、WPF 表格欄位與當地時間顯示、作者與社團（多對多，`Creators` 一張表以 `WorkCreators.Role` 區分；API 只收發名字，WPF 一行一個）、外部來源 Steam（`IStoreSource` 抽象、`IHttpClientFactory`、假 handler 單元測試；`GET /api/lookup` 查詢，WPF 貼網址「抓取」填表單，不存檔）、作品類型（`WorkTypes` 一對多、`Restrict`、種子資料；作品必填 `workTypeId`、可依類型篩選；類型管理 `POST／PUT／DELETE /api/work-types`：名稱重複回 409、沒給 `SortOrder` 時排在「其他」前面、「其他」（`WorkType.OtherId`）不能刪除、刪除類型時作品（含最近刪除的）改成「其他」；WPF 表格的類型欄、表單的類型下拉選單與類型管理視窗；整合測試的資料庫準備抽成 `DatabaseTestBase`）、標籤（`Tags` 多對多，不建中間類別，`WorkTags` 由 EF Core 管理；存檔 find-or-create；`GET /api/tags` 只列有未刪除作品在用的並附數量、`DELETE /api/tags/{id}`；`?tags=…&tagMode=Any` 篩選，預設全部符合；WPF 表單輸入、表格欄位、標籤篩選列；沒人用的標籤與作者不在存檔時刪，留給整理資料庫）。
 
 目標是和原本的 Node 版（`F:\tool\media-library`）功能一樣，規劃前先對照它的 `schema.sql`、`server.js`、`lib/scrapers.js`、`public/app.js`，不可削減功能。剩下的步驟：
 
-1. 作品欄位補齊：類型（可自訂，已完成）、標籤、系列、更新時間；WPF 工具列加上依類型篩選
-2. UI 美化：WPF 的樣式與主題（例如 .NET 內建的 Fluent 主題或 WPF UI 等套件），欄位大致固定後再做
+1. 作品欄位補齊：類型（可自訂，已完成）、標籤（已完成）、系列、更新時間；WPF 工具列加上依類型篩選
+2. UI 美化：WPF 的樣式與主題（例如 .NET 內建的 Fluent 主題或 WPF UI 等套件），欄位大致固定後再做；標籤篩選列標籤多時會把表格往下擠，要限制高度或可收合
 3. 多網址（各自的購買狀態、語言）與 DLC／追加內容
 4. 封面：上傳、從商店抓；作者、社團、系列也有封面
 5. 作者、社團、系列的管理：網址、封面、別名、備註
-6. 外部來源補齊：DLsite、DMM／FANZA、通用 og 標籤
+6. 外部來源補齊：DLsite、DMM／FANZA、通用 og 標籤；抓取時也帶回標籤（Steam genres、DLsite ジャンル）
 7. 重複偵測：新增時檢查（完全相同擋下、相似提醒）、全庫掃描
 8. 最近刪除（還原、永久刪除、清空）與批次新增
 9. 背景工作與 SignalR：批次更新價格與特價、作者／社團新作、有聲漫畫掃描、折價券活動掃描、進度回報
 10. 商店作品查詢：DLsite 搜尋並直接加入
-11. 匯入／匯出備份、整理資料庫、統計
+11. 匯入／匯出備份、整理資料庫（含刪除沒有作品在用的標籤與作者）、缺少資料篩選（原版 `missing=`：網址、封面、作者、系列、價格、標籤）、統計
 12. 登入
-13. README
+13. README；Swagger 的 enum 顯示成名稱（`JsonStringEnumConverter`，目前顯示成整數）

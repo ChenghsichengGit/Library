@@ -1,4 +1,4 @@
-using Library.Application.Abstractions;
+﻿using Library.Application.Abstractions;
 using Library.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,6 +18,7 @@ public class LibraryDbContext : DbContext, ILibraryDbContext
     public DbSet<Creator> Creators => Set<Creator>();
 
     public DbSet<WorkType> WorkTypes => Set<WorkType>();
+    public DbSet<Tag> Tags => Set<Tag>();
 
     /// <summary>
     /// 慣例和屬性標記寫不出來的資料庫設定。修改結構後要產生 Migration。
@@ -64,6 +65,14 @@ public class LibraryDbContext : DbContext, ILibraryDbContext
             new WorkType { Id = 5, Name = "ASMR", SortOrder = 4 },
             new WorkType { Id = WorkType.OtherId, Name = "其他", SortOrder = 99 }
         );
+
+        modelBuilder.Entity<Tag>().HasIndex(t => t.Name).IsUnique();
+
+        // 多對多不建中間類別，中間表 WorkTags 由 EF 管理
+        modelBuilder.Entity<Work>()
+            .HasMany(w => w.Tags)
+            .WithMany(t => t.Works)
+            .UsingEntity(j => j.ToTable("WorkTags"));
     }
 
     // 所有 DateTime 讀出時標記為 UTC，JSON 才會帶 Z

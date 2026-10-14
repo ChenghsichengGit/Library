@@ -10,4 +10,6 @@ public record WorkListQuery(
     int? MinScore,
     int? MaxScore,
     string Sort,
-    bool Desc);
+    bool Desc,
+    List<string> Tags,
+    bool TagAny);

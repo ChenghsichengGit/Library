@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace Library.Domain.Entities;
 
@@ -48,4 +48,6 @@ public class Work
     public int WorkTypeId { get; set; }
 
     public WorkType WorkType { get; set; } = null!;
+
+    public List<Tag> Tags { get; set; } = [];
 }

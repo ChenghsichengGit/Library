@@ -1,4 +1,4 @@
-using Library.Application.Abstractions;
+﻿using Library.Application.Abstractions;
 using Library.Application.Dtos;
 using Library.Application.Exceptions;
 using Library.Domain.Entities;
@@ -31,6 +31,7 @@ public class WorkService
             .Include(w => w.Creators)
             .ThenInclude(wc => wc.Creator)
             .Include(w => w.WorkType)
+            .Include(w => w.Tags)
             .AsNoTracking();
 
         // 比對三種語言的名稱而不是 Title，用任一語言都搜得到
@@ -56,6 +57,15 @@ public class WorkService
 
         if (query.MaxScore != null)
             works = works.Where(w => w.Score <= query.MaxScore);
+
+        // 和存檔用同一套整理：清單去重複後，All 才能用「符合數 = 清單長度」判斷
+        var tagNames = CleanNames(query.Tags);
+        if (tagNames.Count > 0)
+        {
+            works = query.TagMode == TagMatch.Any
+                ? works.Where(w => w.Tags.Any(t => tagNames.Contains(t.Name)))
+                : works.Where(w => w.Tags.Count(t => tagNames.Contains(t.Name)) == tagNames.Count);
+        }
 
         var ordered = query.Sort switch
         {
@@ -93,6 +103,7 @@ public class WorkService
             .Include(w => w.Creators)
             .ThenInclude(wc => wc.Creator)
             .Include(w => w.WorkType)
+            .Include(w => w.Tags)
             .AsNoTracking()
             .FirstOrDefaultAsync(w => w.Id == id);
 
@@ -126,6 +137,7 @@ public class WorkService
         // Include 舊的關聯，ApplyAsync 的 Clear() 才刪得掉
         var work = await _db.Works
             .Include(w => w.Creators)
+            .Include(w => w.Tags)
             .FirstOrDefaultAsync(w => w.Id == id);
         if (work is null)
             return false;
@@ -151,7 +163,7 @@ public class WorkService
     }
 
     /// <summary>
-    /// 新增與修改共用：把 request 填進 work，並把作者、社團整份換成 request 的名單（名字已存在就沿用）。
+    /// 新增與修改共用：把 request 填進 work，並把作者、社團、標籤整份換成 request 的名單（名字已存在就沿用）。
     /// 只改記憶體，由呼叫端存檔；不設定建立時間。
     /// </summary>
     private async Task ApplyAsync(Work work, SaveWorkRequest request)
@@ -187,6 +199,20 @@ public class WorkService
             work.Creators.Add(new WorkCreator { Creator = GetOrCreate(name), Role = CreatorRole.Author });
         foreach (var name in circles)
             work.Creators.Add(new WorkCreator { Creator = GetOrCreate(name), Role = CreatorRole.Circle });
+
+        // 標籤只有一份名單且已去重複，新建的不必放回 Dictionary；WorkTags 由 EF 寫入
+        var tagNames = CleanNames(request.Tags);
+        var tags = await _db.Tags
+            .Where(t => tagNames.Contains(t.Name))
+            .ToDictionaryAsync(t => t.Name, StringComparer.OrdinalIgnoreCase);
+
+        work.Tags.Clear();
+        foreach (var name in tagNames)
+        {
+            if (!tags.TryGetValue(name, out var tag))
+                tag = new Tag { Name = name };
+            work.Tags.Add(tag);
+        }
 
         // 新建的放回 Dictionary：作者和社團是同一個新名字時，才不會建立兩次
         Creator GetOrCreate(string name)

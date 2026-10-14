@@ -474,4 +474,111 @@ public class WorkServiceTests(SqlServerFixture fixture) : DatabaseTestBase(fixtu
             Assert.Single(result, w => w.Title == "TEST2");
         }
     }
+
+    // 防：GetByIdAsync 漏了 Include(Tags)、名稱沒整理、沒排序
+    [Fact]
+    public async Task CreateAsync_SavesTags()
+    {
+        int id;
+        await using (var db = CreateDbContext())
+        {
+            var dto = await CreateService(db).CreateAsync(new SaveWorkRequest
+            {
+                TitleJa = "テスト",
+                WorkTypeId = 1,
+                Tags = ["B標籤", " A標籤 ", "", "a標籤"]
+            });
+            id = dto.Id;
+        }
+
+        await using (var db = CreateDbContext())
+        {
+            var result = await CreateService(db).GetByIdAsync(id);
+
+            // 空字串濾掉、去前後空白、a作者 和 A作者 視為同一個、依名字排序
+            Assert.Equal(["A標籤", "B標籤"], result!.Tags);
+        }
+    }
+
+    // 防：UpdateAsync 漏了 Include，舊的關聯清不掉，結果變成 A 和 B 都在
+    [Fact]
+    public async Task UpdateAsync_ReplacesTags()
+    {
+        int id;
+        await using (var db = CreateDbContext())
+        {
+            var dto = await CreateService(db).CreateAsync(new SaveWorkRequest
+            {
+                TitleJa = "テスト",
+                Tags = ["A"],
+                WorkTypeId = 1
+            });
+            id = dto.Id;
+        }
+
+        await using (var db = CreateDbContext())
+        {
+            // PUT 是整筆取代，名稱也要給，否則會撞上 CHECK 約束
+            var result = await CreateService(db).UpdateAsync(id, new SaveWorkRequest
+            {
+                TitleJa = "テスト",
+                Tags = ["B"],
+                WorkTypeId = 1
+            });
+
+            Assert.True(result);
+        }
+
+        await using (var db = CreateDbContext())
+        {
+            var result = await CreateService(db).GetByIdAsync(id);
+
+            Assert.Equal(["B"], result!.Tags);
+        }
+    }
+
+    // 防：Dictionary 沒設不分大小寫，資料庫查得到 ASMR，但用 asmr 找不到而又新建一筆，撞上唯一索引
+    [Fact]
+    public async Task CreateAsync_ExistingTagName_ReusesTag()
+    {
+        await using (var db = CreateDbContext())
+        {
+            var service = CreateService(db);
+            await service.CreateAsync(new SaveWorkRequest { TitleJa = "A", Tags = ["ASMR"], WorkTypeId = 1 });
+            await service.CreateAsync(new SaveWorkRequest { TitleJa = "B", Tags = ["asmr"], WorkTypeId = 1 });
+        }
+
+        await using (var db = CreateDbContext())
+        {
+            // Tags 表只能有一筆
+            Assert.Single(await db.Tags.ToListAsync());
+        }
+    }
+
+    // 防：AND／OR 寫反、預設不是 AND、篩選清單沒整理（空字串、重複被當成條件）
+    [Theory]
+    [InlineData(null, new[] { "AB" })]
+    [InlineData(TagMatch.Any, new[] { "A", "AB" })]
+    public async Task GetWorksAsync_FiltersByTags(TagMatch? mode, string[] expected)
+    {
+        await using (var db = CreateDbContext())
+        {
+            var service = CreateService(db);
+            await service.CreateAsync(new SaveWorkRequest { TitleEn = "A", Tags = ["中文"], WorkTypeId = 1 });
+            await service.CreateAsync(new SaveWorkRequest { TitleEn = "AB", Tags = ["中文", "長篇"], WorkTypeId = 1 });
+            await service.CreateAsync(new SaveWorkRequest { TitleEn = "C", Tags = ["短篇"], WorkTypeId = 1 });
+        }
+
+        await using (var db = CreateDbContext())
+        {
+            // null 時不設定，測的是預設值
+            var query = new WorkQuery { Tags = ["中文", " 長篇 ", "長篇", ""], Sort = WorkSort.Title };
+            if (mode is not null)
+                query.TagMode = mode.Value;
+
+            var result = await CreateService(db).GetWorksAsync(query);
+
+            Assert.Equal(expected, result.Select(w => w.Title));
+        }
+    }
 }

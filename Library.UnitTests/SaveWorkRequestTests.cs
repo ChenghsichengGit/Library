@@ -64,4 +64,27 @@ public class SaveWorkRequestTests
 
         Assert.NotEmpty(errors);
     }
+
+    // 只測邊界值
+    [Theory]
+    [InlineData(100, true)]
+    [InlineData(101, false)]
+    public void Validate_TagLength_Max100(int length, bool expectValid)
+    {
+        var request = new SaveWorkRequest { TitleZh = "TEST", WorkTypeId = 1, Tags = [new string('a', length)] };
+
+        var errors = Validate(request);
+
+        Assert.Equal(expectValid, errors.Count == 0);
+    }
+
+    // 防：少了 ?.，JSON 送來 null 時 Validate 丟出 NullReferenceException
+    [Fact]
+    public void Validate_NullTag_HasNoErrors()
+    {
+        var request = new SaveWorkRequest { TitleZh = "TEST", WorkTypeId = 1, Tags = ["A", null!] };
+        var errors = Validate(request);
+
+        Assert.Empty(errors);
+    }
 }

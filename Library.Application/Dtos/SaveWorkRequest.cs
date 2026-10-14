@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace Library.Application.Dtos;
 
@@ -36,6 +36,9 @@ public class SaveWorkRequest : IValidatableObject
     [Required]
     public int? WorkTypeId { get; set; }
 
+    // 整理方式同作者；名稱上限 100，在 Validate 檢查
+    public List<string>? Tags { get; set; }
+
     /// <summary>跨欄位的驗證規則，屬性標記都通過後才會執行。</summary>
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
@@ -59,6 +62,11 @@ public class SaveWorkRequest : IValidatableObject
         {
             yield return new ValidationResult(
                 "作者或社團名稱不能超過 300 字", [nameof(Authors), nameof(Circles)]);
+        }
+
+        if ((Tags ?? []).Any(t => t?.Length > 100))
+        {
+            yield return new ValidationResult("標籤名稱不能超過 100 字", [nameof(Tags)]);
         }
     }
 }
