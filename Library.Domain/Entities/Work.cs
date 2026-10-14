@@ -50,4 +50,9 @@ public class Work
     public WorkType WorkType { get; set; } = null!;
 
     public List<Tag> Tags { get; set; } = [];
+
+    /// <summary>null 代表沒有系列。</summary>
+    public int? SeriesId { get; set; }
+
+    public Series? Series { get; set; }
 }

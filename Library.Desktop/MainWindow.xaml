@@ -56,8 +56,10 @@
             </ItemsControl>
         </DockPanel>
         <!-- 右側：編輯表單，比視窗高時可捲動 -->
-        <ScrollViewer DockPanel.Dock="Right" Width="260" Margin="8,0,0,0" VerticalScrollBarVisibility="Auto">
-            <StackPanel DockPanel.Dock="Right" Width="260" Margin="8,0,0,0">
+        <ScrollViewer DockPanel.Dock="Right" Width="260" Margin="8,0,0,0"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="0,0,8,0">
                 <TextBlock Text="商店網址" />
                 <DockPanel Margin="0,2,0,8">
                     <Button DockPanel.Dock="Right" Content="抓取" Command="{Binding FetchCommand}"
@@ -87,6 +89,14 @@
                 <TextBlock Text="類型" />
                 <ComboBox ItemsSource="{Binding WorkTypes}" DisplayMemberPath="Name" SelectedValuePath="Id"
                           SelectedValue="{Binding WorkTypeId}" Margin="0,2,0,8" />
+                <!-- 可直接輸入新系列（存檔時由 API 建立），也可以從清單選 -->
+                <TextBlock Text="系列" />
+                <ComboBox IsEditable="True"
+                          ItemsSource="{Binding SeriesOptions}"
+                          DisplayMemberPath="Name"
+                          Text="{Binding SeriesInput, UpdateSourceTrigger=PropertyChanged}"
+                          Margin="0,2,0,8"
+                          StaysOpenOnEdit="True" />
                 <TextBlock Text="標籤 (一行一個)" />
                 <TextBox Text="{Binding TagsInput, UpdateSourceTrigger=PropertyChanged}"
                          Height="50" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Margin="0,2,0,8" />
@@ -113,6 +123,7 @@
                 <DataGridTextColumn Header="作者" Binding="{Binding AuthorsText}" Width="*" />
                 <DataGridTextColumn Header="社團" Binding="{Binding CirclesText}" Width="*" />
                 <DataGridTextColumn Header="類型" Binding="{Binding WorkType}" Width="*" />
+                <DataGridTextColumn Header="系列" Binding="{Binding Series}" Width="*" />
                 <DataGridTextColumn Header="標籤" Binding="{Binding TagsText}" Width="*" />
                 <DataGridTextColumn Header="評分" Binding="{Binding ScoreText}" Width="80" />
                 <DataGridCheckBoxColumn Header="最愛" Binding="{Binding Favorite}" Width="50" />

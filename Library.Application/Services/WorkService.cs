@@ -32,6 +32,7 @@ public class WorkService
             .ThenInclude(wc => wc.Creator)
             .Include(w => w.WorkType)
             .Include(w => w.Tags)
+            .Include(w => w.Series)
             .AsNoTracking();
 
         // 比對三種語言的名稱而不是 Title，用任一語言都搜得到
@@ -41,7 +42,10 @@ public class WorkService
                 w.TitleJa.Contains(query.Q) ||
                 w.TitleEn.Contains(query.Q) ||
                 w.Remark.Contains(query.Q) ||
-                w.Creators.Any(wc => wc.Creator.Name.Contains(query.Q)));
+                w.Creators.Any(wc => wc.Creator.Name.Contains(query.Q)) ||
+                (w.Series != null &&
+                 w.Series.Name.Contains(query.Q))
+            );
 
         if (query.Favorite != null)
             works = works.Where(w => w.Favorite == query.Favorite);
@@ -104,6 +108,7 @@ public class WorkService
             .ThenInclude(wc => wc.Creator)
             .Include(w => w.WorkType)
             .Include(w => w.Tags)
+            .Include(w => w.Series)
             .AsNoTracking()
             .FirstOrDefaultAsync(w => w.Id == id);
 
@@ -134,10 +139,11 @@ public class WorkService
     /// </summary>
     public async Task<bool> UpdateAsync(int id, SaveWorkRequest request)
     {
-        // Include 舊的關聯，ApplyAsync 的 Clear() 才刪得掉
+        // Include 舊的關聯：Clear() 才刪得掉，Series 設成 null 時 EF Core 才看得出變化
         var work = await _db.Works
             .Include(w => w.Creators)
             .Include(w => w.Tags)
+            .Include(w => w.Series)
             .FirstOrDefaultAsync(w => w.Id == id);
         if (work is null)
             return false;
@@ -163,7 +169,7 @@ public class WorkService
     }
 
     /// <summary>
-    /// 新增與修改共用：把 request 填進 work，並把作者、社團、標籤整份換成 request 的名單（名字已存在就沿用）。
+    /// 新增與修改共用：把 request 填進 work，並把作者、社團、標籤整份換成 request 的名單、設定系列（名字已存在就沿用）。
     /// 只改記憶體，由呼叫端存檔；不設定建立時間。
     /// </summary>
     private async Task ApplyAsync(Work work, SaveWorkRequest request)
@@ -212,6 +218,18 @@ public class WorkService
             if (!tags.TryGetValue(name, out var tag))
                 tag = new Tag { Name = name };
             work.Tags.Add(tag);
+        }
+
+        // 單一名稱直接在資料庫比對（不分大小寫），不需要 Dictionary
+        var seriesName = request.Series?.Trim();
+        if (string.IsNullOrEmpty(seriesName))
+        {
+            work.Series = null;
+        }
+        else
+        {
+            work.Series = await _db.Series.FirstOrDefaultAsync(s => s.Name == seriesName)
+                          ?? new Series { Name = seriesName };
         }
 
         // 新建的放回 Dictionary：作者和社團是同一個新名字時，才不會建立兩次

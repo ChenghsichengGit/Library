@@ -87,4 +87,17 @@ public class SaveWorkRequestTests
 
         Assert.Empty(errors);
     }
+
+    // 系列是單一字串，[MaxLength] 直接限制字數
+    [Theory]
+    [InlineData(300, true)]
+    [InlineData(301, false)]
+    public void Validate_SeriesLength_Max300(int length, bool expectValid)
+    {
+        var request = new SaveWorkRequest { TitleZh = "TEST", WorkTypeId = 1, Series = new string('a', length) };
+
+        var errors = Validate(request);
+
+        Assert.Equal(expectValid, errors.Count == 0);
+    }
 }

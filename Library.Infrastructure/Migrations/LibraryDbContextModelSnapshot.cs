@@ -43,6 +43,27 @@ namespace Library.Infrastructure.Migrations
                     b.ToTable("Creators");
                 });
 
+            modelBuilder.Entity("Library.Domain.Entities.Series", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Series");
+                });
+
             modelBuilder.Entity("Library.Domain.Entities.Tag", b =>
                 {
                     b.Property<int>("Id")
@@ -95,6 +116,9 @@ namespace Library.Infrastructure.Migrations
                     b.Property<int>("Score")
                         .HasColumnType("int");
 
+                    b.Property<int?>("SeriesId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
@@ -121,6 +145,8 @@ namespace Library.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("SeriesId");
 
                     b.HasIndex("WorkTypeId");
 
@@ -227,11 +253,18 @@ namespace Library.Infrastructure.Migrations
 
             modelBuilder.Entity("Library.Domain.Entities.Work", b =>
                 {
+                    b.HasOne("Library.Domain.Entities.Series", "Series")
+                        .WithMany("Works")
+                        .HasForeignKey("SeriesId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Library.Domain.Entities.WorkType", "WorkType")
                         .WithMany("Works")
                         .HasForeignKey("WorkTypeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Series");
 
                     b.Navigation("WorkType");
                 });
@@ -271,6 +304,11 @@ namespace Library.Infrastructure.Migrations
                 });
 
             modelBuilder.Entity("Library.Domain.Entities.Creator", b =>
+                {
+                    b.Navigation("Works");
+                });
+
+            modelBuilder.Entity("Library.Domain.Entities.Series", b =>
                 {
                     b.Navigation("Works");
                 });

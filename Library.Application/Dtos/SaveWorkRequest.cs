@@ -39,6 +39,10 @@ public class SaveWorkRequest : IValidatableObject
     // 整理方式同作者；名稱上限 100，在 Validate 檢查
     public List<string>? Tags { get; set; }
 
+    // 系列名稱，找不到就新建；空白代表沒有系列
+    [MaxLength(300)]
+    public string? Series { get; set; }
+
     /// <summary>跨欄位的驗證規則，屬性標記都通過後才會執行。</summary>
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {

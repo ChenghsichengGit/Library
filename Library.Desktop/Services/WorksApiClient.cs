@@ -141,6 +141,12 @@ public class WorksApiClient
         return await _http.GetFromJsonAsync<List<TagItem>>("api/tags") ?? [];
     }
 
+    /// <summary>GET /api/series：有作品的系列，給系列輸入框當選項。</summary>
+    public async Task<List<SeriesItem>> GetSeriesAsync()
+    {
+        return await _http.GetFromJsonAsync<List<SeriesItem>>("api/series") ?? [];
+    }
+
     // ASP.NET Core 驗證失敗的回應，只取 errors
     private record ValidationProblem(Dictionary<string, string[]> Errors);
 }

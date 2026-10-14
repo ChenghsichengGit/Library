@@ -16,4 +16,5 @@ public record SaveWorkRequest(
     List<string> Authors,
     List<string> Circles,
     int WorkTypeId,
-    List<string> Tags);
+    List<string> Tags,
+    string? Series);

@@ -19,7 +19,9 @@ public record WorkItem(
     string[] Circles,
     int WorkTypeId,
     string WorkType,
-    string[] Tags)
+    string[] Tags,
+    int? SeriesId,
+    string? Series)
 {
     // 以下只給畫面顯示用
 

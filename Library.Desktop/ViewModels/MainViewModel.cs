@@ -58,6 +58,9 @@ public partial class MainViewModel : ObservableObject
     /// <summary>類型下拉選單的選項，依顯示順序排列。</summary>
     public ObservableCollection<WorkTypeItem> WorkTypes { get; } = [];
 
+    /// <summary>系列輸入框的選項。存檔可能建立新系列，所以儲存、刪除後重讀。</summary>
+    public ObservableCollection<SeriesItem> SeriesOptions { get; } = [];
+
     // 新增作品時預設第一個類型；清單是空的時給 0，存檔時由 API 回 400，而不是讓程式當掉
     private int DefaultWorkTypeId => WorkTypes.FirstOrDefault()?.Id ?? 0;
 
@@ -76,6 +79,9 @@ public partial class MainViewModel : ObservableObject
 
         if (TagFilters.Count == 0)
             await LoadTagsAsync();
+
+        if (SeriesOptions.Count == 0)
+            await LoadSeriesAsync();
 
         StatusMessage = "載入中…";
         try
@@ -110,7 +116,6 @@ public partial class MainViewModel : ObservableObject
     /// <summary>
     /// 從 API 讀取類型清單。類型很少變動，只在清單還是空的時候由 LoadAsync 呼叫，不隨篩選重讀。
     /// </summary>
-    [RelayCommand]
     private async Task LoadWorkTypesAsync()
     {
         try
@@ -125,6 +130,24 @@ public partial class MainViewModel : ObservableObject
             // 選項讀進來之後才有預設值可以給；正在編輯作品時保留它原本的類型
             if (EditingId == null)
                 WorkTypeId = DefaultWorkTypeId;
+        }
+        catch (HttpRequestException)
+        {
+            StatusMessage = "連不上 API，請確認 Library.Api 有在執行";
+        }
+    }
+
+    /// <summary>從 API 讀取系列清單。</summary>
+    private async Task LoadSeriesAsync()
+    {
+        try
+        {
+            var series = await _api.GetSeriesAsync();
+            SeriesOptions.Clear();
+            foreach (var item in series)
+            {
+                SeriesOptions.Add(item);
+            }
         }
         catch (HttpRequestException)
         {
@@ -162,6 +185,7 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private string _circlesInput = "";
 
     [ObservableProperty] private string _tagsInput = "";
+    [ObservableProperty] private string _seriesInput = "";
 
     // 只用來抓取資料填表單，不會存進作品
     [ObservableProperty] private string _storeUrl = "";
@@ -191,6 +215,7 @@ public partial class MainViewModel : ObservableObject
         AuthorsInput = string.Join("\n", value.Authors);
         CirclesInput = string.Join("\n", value.Circles);
         TagsInput = string.Join("\n", value.Tags);
+        SeriesInput = value.Series ?? "";
         ErrorMessage = "";
     }
 
@@ -213,6 +238,7 @@ public partial class MainViewModel : ObservableObject
         CirclesInput = "";
         TagsInput = "";
         StoreUrl = "";
+        SeriesInput = "";
         ErrorMessage = "";
     }
 
@@ -224,7 +250,7 @@ public partial class MainViewModel : ObservableObject
             TitleZh, TitleJa, TitleEn, Remark,
             ReleaseDate is { } date ? DateOnly.FromDateTime(date) : null,
             Score, Favorite, Purchased, SplitLines(AuthorsInput), SplitLines(CirclesInput),
-            WorkTypeId, SplitLines(TagsInput)
+            WorkTypeId, SplitLines(TagsInput), SeriesInput
         );
 
         try
@@ -243,6 +269,7 @@ public partial class MainViewModel : ObservableObject
             ErrorMessage = "";
             // 先更新標籤：LoadAsync 依勾選組查詢條件，已消失的標籤不能再送
             await LoadTagsAsync();
+            await LoadSeriesAsync();
             await LoadAsync();
 
             // 選回剛儲存的那筆，表單更新成伺服器整理過的內容（例如去掉前後空白）
@@ -273,6 +300,7 @@ public partial class MainViewModel : ObservableObject
             await _api.DeleteAsync(id);
             New();
             await LoadTagsAsync();
+            await LoadSeriesAsync();
             await LoadAsync();
         }
         catch (ApiValidationException ex)

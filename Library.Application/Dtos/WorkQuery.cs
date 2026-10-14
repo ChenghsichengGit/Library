@@ -11,7 +11,7 @@ namespace Library.Application.Dtos;
 /// </remarks>
 public class WorkQuery : IValidatableObject
 {
-    /// <summary>搜尋字：比對三種語言的名稱、備註與作者社團名稱。</summary>
+    /// <summary>搜尋字：比對三種語言的名稱、備註、作者社團與系列名稱。</summary>
     public string? Q { get; set; }
 
     public bool? Favorite { get; set; }

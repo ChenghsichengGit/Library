@@ -581,4 +581,75 @@ public class WorkServiceTests(SqlServerFixture fixture) : DatabaseTestBase(fixtu
             Assert.Equal(expected, result.Select(w => w.Title));
         }
     }
+
+    // 防：GetByIdAsync 漏了 Include(Series)、名稱沒去空白、同名（不分大小寫）又建立一個系列
+    [Fact]
+    public async Task CreateAsync_SavesSeries_AndReusesExisting()
+    {
+        int firstId, secondId;
+        await using (var db = CreateDbContext())
+        {
+            var service = CreateService(db);
+            firstId = (await service.CreateAsync(new SaveWorkRequest
+                { TitleJa = "A", Series = " Series ", WorkTypeId = 1 })).Id;
+            secondId = (await service.CreateAsync(new SaveWorkRequest
+                { TitleJa = "B", Series = "series", WorkTypeId = 1 })).Id;
+        }
+
+        await using (var db = CreateDbContext())
+        {
+            var service = CreateService(db);
+            var first = await service.GetByIdAsync(firstId);
+            var second = await service.GetByIdAsync(secondId);
+
+            Assert.Equal("Series", first!.Series);
+            Assert.Equal(first.SeriesId, second!.SeriesId);
+            Assert.Single(await db.Series.ToListAsync());
+        }
+    }
+
+    // 防：UpdateAsync 漏了 Include(Series)，設成 null 時 EF Core 看不出變化，系列清不掉
+    [Fact]
+    public async Task UpdateAsync_EmptySeries_ClearsSeries()
+    {
+        int id;
+        await using (var db = CreateDbContext())
+        {
+            id = (await CreateService(db).CreateAsync(new SaveWorkRequest
+                { TitleJa = "A", Series = "S", WorkTypeId = 1 })).Id;
+        }
+
+        await using (var db = CreateDbContext())
+        {
+            Assert.True(await CreateService(db).UpdateAsync(id, new SaveWorkRequest
+                { TitleJa = "A", Series = " ", WorkTypeId = 1 }));
+        }
+
+        await using (var db = CreateDbContext())
+        {
+            var result = await CreateService(db).GetByIdAsync(id);
+
+            Assert.Null(result!.SeriesId);
+            Assert.Null(result.Series);
+        }
+    }
+
+    // 防：搜尋沒比對系列名稱（作品名稱故意不含搜尋字）；沒有系列的作品讓查詢出錯
+    [Fact]
+    public async Task GetWorksAsync_FiltersBySearchText_InSeriesName()
+    {
+        await using (var db = CreateDbContext())
+        {
+            var service = CreateService(db);
+            await service.CreateAsync(new SaveWorkRequest { TitleJa = "A", Series = "Half-Life", WorkTypeId = 1 });
+            await service.CreateAsync(new SaveWorkRequest { TitleJa = "B", WorkTypeId = 1 });
+        }
+
+        await using (var db = CreateDbContext())
+        {
+            var result = await CreateService(db).GetWorksAsync(new WorkQuery { Q = "Half" });
+            var work = Assert.Single(result);
+            Assert.Equal("A", work.Title);
+        }
+    }
 }

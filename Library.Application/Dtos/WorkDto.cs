@@ -21,10 +21,12 @@ public record WorkDto(
     string[] Circles,
     int WorkTypeId,
     string WorkType,
-    string[] Tags)
+    string[] Tags,
+    int? SeriesId,
+    string? Series)
 {
     /// <summary>
-    /// 從 Work 建立 WorkDto。查詢時要 Include Creators（含 Creator）、WorkType 與 Tags。
+    /// 從 Work 建立 WorkDto。查詢時要 Include Creators（含 Creator）、WorkType、Tags 與 Series。
     /// </summary>
     public static WorkDto From(Work w) =>
         new(
@@ -44,5 +46,7 @@ public record WorkDto(
             w.Creators.Where(wc => wc.Role == CreatorRole.Circle).Select(wc => wc.Creator.Name).Order().ToArray(),
             w.WorkTypeId,
             w.WorkType.Name,
-            w.Tags.Select(t => t.Name).Order().ToArray());
+            w.Tags.Select(t => t.Name).Order().ToArray(),
+            w.SeriesId,
+            w.Series?.Name);
 }

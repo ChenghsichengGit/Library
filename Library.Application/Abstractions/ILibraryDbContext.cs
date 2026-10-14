@@ -18,6 +18,7 @@ public interface ILibraryDbContext
 
     DbSet<WorkType> WorkTypes { get; }
     DbSet<Tag> Tags { get; }
+    DbSet<Series> Series { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

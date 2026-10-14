@@ -19,6 +19,7 @@ public class LibraryDbContext : DbContext, ILibraryDbContext
 
     public DbSet<WorkType> WorkTypes => Set<WorkType>();
     public DbSet<Tag> Tags => Set<Tag>();
+    public DbSet<Series> Series => Set<Series>();
 
     /// <summary>
     /// 慣例和屬性標記寫不出來的資料庫設定。修改結構後要產生 Migration。
@@ -73,6 +74,14 @@ public class LibraryDbContext : DbContext, ILibraryDbContext
             .HasMany(w => w.Tags)
             .WithMany(t => t.Works)
             .UsingEntity(j => j.ToTable("WorkTags"));
+
+        modelBuilder.Entity<Series>().HasIndex(s => s.Name).IsUnique();
+
+        // 刪除系列時由資料庫把作品的 SeriesId 設成 null；預設的 ClientSetNull 只處理有載入的作品
+        modelBuilder.Entity<Work>()
+            .HasOne(w => w.Series)
+            .WithMany(s => s.Works)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 
     // 所有 DateTime 讀出時標記為 UTC，JSON 才會帶 Z
