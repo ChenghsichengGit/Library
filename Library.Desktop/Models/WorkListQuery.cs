@@ -9,7 +9,8 @@ public record WorkListQuery(
     bool? Favorite,
     int? MinScore,
     int? MaxScore,
-    string Sort,
-    bool Desc,
+    int? WorkTypeId,
     List<string> Tags,
-    bool TagAny);
+    bool TagAny,
+    string Sort,
+    bool Desc);

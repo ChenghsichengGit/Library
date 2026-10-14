@@ -29,6 +29,8 @@
 
             <CheckBox Content="只看最愛" IsChecked="{Binding OnlyFavorite}" VerticalAlignment="Center" Margin="0,0,16,0" />
 
+            <ComboBox ItemsSource="{Binding WorkTypeFilters}" DisplayMemberPath="Name" SelectedValuePath="Id"
+                      SelectedValue="{Binding FilterWorkTypeId}" Width="100" Margin="0,0,16,0" />
             <ComboBox ItemsSource="{Binding ScoreFilters}" SelectedItem="{Binding SelectedScoreFilter}"
                       DisplayMemberPath="Label" Width="100" Margin="0,0,16,0" />
 
@@ -129,6 +131,8 @@
                 <DataGridCheckBoxColumn Header="最愛" Binding="{Binding Favorite}" Width="50" />
                 <DataGridCheckBoxColumn Header="已購買" Binding="{Binding Purchased}" Width="60" />
                 <DataGridTextColumn Header="上架日" Binding="{Binding ReleaseDate, StringFormat=yyyy/MM/dd}" Width="90" />
+                <DataGridTextColumn Header="修改時間" Binding="{Binding UpdatedAtLocal, StringFormat=yyyy/MM/dd HH:mm}"
+                                    Width="120" />
                 <DataGridTextColumn Header="加入時間" Binding="{Binding CreatedAtLocal, StringFormat=yyyy/MM/dd HH:mm}"
                                     Width="120" />
             </DataGrid.Columns>

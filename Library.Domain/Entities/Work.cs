@@ -39,6 +39,9 @@ public class Work
     /// <summary>加入收藏的時間（UTC）。</summary>
     public DateTime CreatedAt { get; set; }
 
+    /// <summary>最後一次新增、修改或刪除的時間（UTC），用來依修改時間排序。</summary>
+    public DateTime UpdatedAt { get; set; }
+
     /// <summary>軟刪除的時間；有值表示在「最近刪除」裡。</summary>
     public DateTime? DeletedAt { get; set; }
 

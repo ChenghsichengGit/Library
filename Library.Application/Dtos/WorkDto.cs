@@ -17,6 +17,7 @@ public record WorkDto(
     bool Favorite,
     bool Purchased,
     DateTime CreatedAt,
+    DateTime UpdatedAt,
     string[] Authors,
     string[] Circles,
     int WorkTypeId,
@@ -41,6 +42,7 @@ public record WorkDto(
             w.Favorite,
             w.Purchased,
             w.CreatedAt,
+            w.UpdatedAt,
             // 依名字排序：資料庫不保證回傳順序
             w.Creators.Where(wc => wc.Role == CreatorRole.Author).Select(wc => wc.Creator.Name).Order().ToArray(),
             w.Creators.Where(wc => wc.Role == CreatorRole.Circle).Select(wc => wc.Creator.Name).Order().ToArray(),

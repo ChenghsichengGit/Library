@@ -19,6 +19,7 @@ public partial class MainViewModel : ObservableObject
     private static readonly SortOption[] AllSortOptions =
     [
         new("加入時間", "createdAt"),
+        new("修改時間", "updatedAt"),
         new("上架日", "releaseDate"),
         new("評分", "score"),
         new("作品名", "title"),
@@ -42,7 +43,11 @@ public partial class MainViewModel : ObservableObject
     // 篩選與排序條件（上方工具列）
     [ObservableProperty] private string _searchText = "";
     [ObservableProperty] private bool _onlyFavorite;
+
     [ObservableProperty] private ScoreFilter _selectedScoreFilter = AllScoreFilters[0];
+
+    // 0 = 全部類型，送 API 時換成 null
+    [ObservableProperty] private int _filterWorkTypeId;
     [ObservableProperty] private bool _tagMatchAny;
     [ObservableProperty] private SortOption _selectedSort = AllSortOptions[0];
     [ObservableProperty] private bool _sortDescending = true;
@@ -57,6 +62,9 @@ public partial class MainViewModel : ObservableObject
 
     /// <summary>類型下拉選單的選項，依顯示順序排列。</summary>
     public ObservableCollection<WorkTypeItem> WorkTypes { get; } = [];
+
+    /// <summary>工具列的類型篩選選項：第一項「全部類型」（Id 0），其餘同 WorkTypes。</summary>
+    public ObservableCollection<WorkTypeItem> WorkTypeFilters { get; } = [];
 
     /// <summary>系列輸入框的選項。存檔可能建立新系列，所以儲存、刪除後重讀。</summary>
     public ObservableCollection<SeriesItem> SeriesOptions { get; } = [];
@@ -93,13 +101,14 @@ public partial class MainViewModel : ObservableObject
                 Favorite: OnlyFavorite ? true : null,
                 MinScore: SelectedScoreFilter.Min,
                 MaxScore: SelectedScoreFilter.Max,
-                Sort: SelectedSort.Value,
-                Desc: SortDescending,
+                WorkTypeId: FilterWorkTypeId == 0 ? null : FilterWorkTypeId,
                 Tags: TagFilters
                     .Where(t => t.IsSelected)
                     .Select(t => t.Name)
                     .ToList(),
-                TagAny: TagMatchAny
+                TagAny: TagMatchAny,
+                Sort: SelectedSort.Value,
+                Desc: SortDescending
             );
             var works = await _api.GetWorksAsync(query);
             Works.Clear();
@@ -126,6 +135,19 @@ public partial class MainViewModel : ObservableObject
             {
                 WorkTypes.Add(type);
             }
+
+            WorkTypeFilters.Clear();
+            WorkTypeFilters.Add(new WorkTypeItem(0, "全部類型", 0));
+            foreach (var type in workType)
+            {
+                WorkTypeFilters.Add(type);
+            }
+
+            // 篩選中的類型被刪掉就回到全部；否則通知繫結重讀，Clear() 後下拉選單才會選回原本的項目
+            if (FilterWorkTypeId != 0 && WorkTypes.All(t => t.Id != FilterWorkTypeId))
+                FilterWorkTypeId = 0;
+            else
+                OnPropertyChanged(nameof(FilterWorkTypeId));
 
             // 選項讀進來之後才有預設值可以給；正在編輯作品時保留它原本的類型
             if (EditingId == null)
@@ -400,6 +422,7 @@ public partial class MainViewModel : ObservableObject
     // 篩選或排序一改就重新查詢；搜尋字不在這裡，每打一個字都查太多次
     partial void OnOnlyFavoriteChanged(bool value) => LoadCommand.Execute(null);
     partial void OnSelectedScoreFilterChanged(ScoreFilter value) => LoadCommand.Execute(null);
+    partial void OnFilterWorkTypeIdChanged(int value) => LoadCommand.Execute(null);
     partial void OnSelectedSortChanged(SortOption value) => LoadCommand.Execute(null);
     partial void OnSortDescendingChanged(bool value) => LoadCommand.Execute(null);
     partial void OnTagMatchAnyChanged(bool value) => LoadCommand.Execute(null);

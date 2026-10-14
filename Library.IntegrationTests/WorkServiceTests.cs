@@ -32,6 +32,7 @@ public class WorkServiceTests(SqlServerFixture fixture) : DatabaseTestBase(fixtu
         var dto = await service.CreateAsync(new SaveWorkRequest { TitleJa = "テスト", WorkTypeId = 1 });
 
         Assert.Equal(new DateTime(2026, 1, 1, 12, 0, 0), dto.CreatedAt);
+        Assert.Equal(dto.CreatedAt, dto.UpdatedAt);
     }
 
     [Fact]
@@ -120,6 +121,7 @@ public class WorkServiceTests(SqlServerFixture fixture) : DatabaseTestBase(fixtu
         Assert.Null(found);
         Assert.NotNull(result);
         Assert.Equal(new DateTime(2026, 1, 2, 12, 0, 0), result.DeletedAt);
+        Assert.Equal(result.DeletedAt, result.UpdatedAt);
     }
 
     [Fact]
@@ -149,7 +151,7 @@ public class WorkServiceTests(SqlServerFixture fixture) : DatabaseTestBase(fixtu
             WorkTypeId = 1
         });
 
-        // 沒送的欄位被清掉、建立時間保留
+        // 沒送的欄位被清掉、建立時間保留、修改時間更新
         await using var db2 = CreateDbContext();
         var result = await db2.Works.SingleAsync(w => w.Id == id);
 
@@ -158,6 +160,7 @@ public class WorkServiceTests(SqlServerFixture fixture) : DatabaseTestBase(fixtu
         Assert.Null(result.ReleaseDate);
         Assert.Equal(3, result.Score);
         Assert.Equal(new DateTime(2026, 1, 1, 12, 0, 0), result.CreatedAt);
+        Assert.Equal(new DateTime(2026, 1, 2, 12, 0, 0), result.UpdatedAt);
     }
 
     [Fact]
@@ -650,6 +653,56 @@ public class WorkServiceTests(SqlServerFixture fixture) : DatabaseTestBase(fixtu
             var result = await CreateService(db).GetWorksAsync(new WorkQuery { Q = "Half" });
             var work = Assert.Single(result);
             Assert.Equal("A", work.Title);
+        }
+    }
+
+    // 防：修改時沒更新 UpdatedAt；依修改時間排序寫成依加入時間
+    [Fact]
+    public async Task GetWorksAsync_SortsByUpdatedAt()
+    {
+        await using (var db = CreateDbContext())
+        {
+            var service = CreateService(db);
+            var a = await service.CreateAsync(new SaveWorkRequest { TitleJa = "A", WorkTypeId = 1 });
+            _time.Advance(TimeSpan.FromHours(1));
+            await service.CreateAsync(new SaveWorkRequest { TitleJa = "B", WorkTypeId = 1 });
+            _time.Advance(TimeSpan.FromHours(1));
+            await service.UpdateAsync(a.Id, new SaveWorkRequest { TitleJa = "A", WorkTypeId = 1 });
+        }
+
+        await using (var db = CreateDbContext())
+        {
+            var result = await CreateService(db).GetWorksAsync(new WorkQuery { Sort = WorkSort.UpdatedAt, Desc = true });
+
+            // 依加入時間會是 B、A
+            Assert.Equal(["A", "B"], result.Select(w => w.Title));
+        }
+    }
+
+    // 防：評分相同時沒依修改時間排（Id、加入時間、修改時間升冪排出來都不一樣）；升冪、降冪都是最近改過的在前
+    [Theory]
+    [InlineData(true, new[] { "B", "C", "A", "D" })]
+    [InlineData(false, new[] { "D", "B", "C", "A" })]
+    public async Task GetWorksAsync_SortsByScore_ThenRecentlyUpdatedFirst(bool desc, string[] expected)
+    {
+        await using (var db = CreateDbContext())
+        {
+            var service = CreateService(db);
+            await service.CreateAsync(new SaveWorkRequest { TitleJa = "A", Score = 5, WorkTypeId = 1 });
+            _time.Advance(TimeSpan.FromHours(1));
+            var b = await service.CreateAsync(new SaveWorkRequest { TitleJa = "B", Score = 5, WorkTypeId = 1 });
+            _time.Advance(TimeSpan.FromHours(1));
+            await service.CreateAsync(new SaveWorkRequest { TitleJa = "C", Score = 5, WorkTypeId = 1 });
+            await service.CreateAsync(new SaveWorkRequest { TitleJa = "D", Score = 3, WorkTypeId = 1 });
+            _time.Advance(TimeSpan.FromHours(1));
+            await service.UpdateAsync(b.Id, new SaveWorkRequest { TitleJa = "B", Score = 5, WorkTypeId = 1 });
+        }
+
+        await using (var db = CreateDbContext())
+        {
+            var result = await CreateService(db).GetWorksAsync(new WorkQuery { Sort = WorkSort.Score, Desc = desc });
+
+            Assert.Equal(expected, result.Select(w => w.Title));
         }
     }
 }

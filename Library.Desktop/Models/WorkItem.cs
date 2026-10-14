@@ -15,6 +15,7 @@ public record WorkItem(
     bool Purchased,
     DateOnly? ReleaseDate,
     DateTime CreatedAt,
+    DateTime UpdatedAt,
     string[] Authors,
     string[] Circles,
     int WorkTypeId,
@@ -27,6 +28,9 @@ public record WorkItem(
 
     /// <summary>加入時間的當地時間（API 回傳 UTC）。</summary>
     public DateTime CreatedAtLocal => CreatedAt.ToLocalTime();
+
+    /// <summary>修改時間的當地時間。</summary>
+    public DateTime UpdatedAtLocal => UpdatedAt.ToLocalTime();
 
     /// <summary>評分的顯示文字：0 不顯示、1～5 星星、6 王冠。</summary>
     public string ScoreText => Score switch

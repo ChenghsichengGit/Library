@@ -141,6 +141,9 @@ namespace Library.Infrastructure.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
 
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<int>("WorkTypeId")
                         .HasColumnType("int");
 

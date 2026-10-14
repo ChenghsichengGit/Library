@@ -82,9 +82,14 @@ public class WorkService
                 ? works.OrderBy(w => w.ReleaseDate == null).ThenByDescending(w => w.ReleaseDate)
                 : works.OrderBy(w => w.ReleaseDate == null).ThenBy(w => w.ReleaseDate),
 
+            // 評分相同時最近修改的在前，升降冪都一樣（同原版）
             WorkSort.Score => query.Desc
-                ? works.OrderByDescending(w => w.Score)
-                : works.OrderBy(w => w.Score),
+                ? works.OrderByDescending(w => w.Score).ThenByDescending(w => w.UpdatedAt)
+                : works.OrderBy(w => w.Score).ThenByDescending(w => w.UpdatedAt),
+
+            WorkSort.UpdatedAt => query.Desc
+                ? works.OrderByDescending(w => w.UpdatedAt)
+                : works.OrderBy(w => w.UpdatedAt),
 
             _ => query.Desc
                 ? works.OrderByDescending(w => w.CreatedAt)
@@ -126,7 +131,10 @@ public class WorkService
         var work = new Work();
         await ApplyAsync(work, request);
 
-        work.CreatedAt = _time.GetUtcNow().UtcDateTime;
+        // 只取一次時間，新增時修改時間和加入時間完全相等
+        var time = _time.GetUtcNow().UtcDateTime;
+        work.CreatedAt = time;
+        work.UpdatedAt = time;
 
         _db.Works.Add(work);
         await _db.SaveChangesAsync();
@@ -150,19 +158,24 @@ public class WorkService
 
         await ApplyAsync(work, request);
 
+        work.UpdatedAt = _time.GetUtcNow().UtcDateTime;
+
         await _db.SaveChangesAsync();
         return true;
     }
 
     /// <summary>
-    /// 軟刪除：只標記刪除時間，之後可以還原。找不到回傳 false。
+    /// 軟刪除：標記刪除時間（同時更新修改時間），之後可以還原。找不到回傳 false。
     /// </summary>
     public async Task<bool> DeleteAsync(int id)
     {
         var work = await _db.Works.FirstOrDefaultAsync(w => w.Id == id);
         if (work is null)
             return false;
-        work.DeletedAt = _time.GetUtcNow().UtcDateTime;
+
+        var time = _time.GetUtcNow().UtcDateTime;
+        work.DeletedAt = time;
+        work.UpdatedAt = time;
 
         await _db.SaveChangesAsync();
         return true;
