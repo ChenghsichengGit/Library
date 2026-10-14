@@ -22,8 +22,12 @@ public abstract class DatabaseTestBase : IAsyncLifetime
         }.ConnectionString;
     }
 
+    // 查詢設定要和正式環境（Infrastructure 的 AddDbContext）一致
     protected LibraryDbContext CreateDbContext() =>
-        new(new DbContextOptionsBuilder<LibraryDbContext>().UseSqlServer(_connectionString).Options);
+        new(new DbContextOptionsBuilder<LibraryDbContext>()
+            .UseSqlServer(_connectionString, sql => sql.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery))
+            .Options);
+
 
     public async Task InitializeAsync()
     {

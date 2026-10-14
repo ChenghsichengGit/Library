@@ -59,7 +59,7 @@ dotnet ef database update --project Library.Infrastructure --startup-project Lib
 目標是和原本的 Node 版（`F:\tool\media-library`）功能一樣，規劃前先對照它的 `schema.sql`、`server.js`、`lib/scrapers.js`、`public/app.js`，不可削減功能。剩下的步驟：
 
 1. ~~作品欄位補齊：類型、標籤、系列、修改時間；WPF 依類型篩選~~（已完成）
-2. UI 美化與效能：作品表格更新慢（29 部作品排版繪製 200～700 ms；已排除 API、重複載入、軟體繪製，回收模式無效，下一步試 6 個 `Width="*"` 欄，見 `docs/wpf-mvvm.md`）；`GetWorksAsync`／`GetByIdAsync` 加 `AsSplitQuery()` 避免作者 × 標籤的笛卡兒積；WPF 的樣式與主題（例如 .NET 內建的 Fluent 主題或 WPF UI 等套件），欄位大致固定後再做；標籤篩選列標籤多時會把表格往下擠，要限制高度或可收合；作者、社團、系列、標籤的輸入框改用 AutoSuggestBox（列出包含輸入文字的選項、打字時自動展開）
+2. UI 美化與效能：（已完成：預設 SplitQuery、作品表格改用 ListView，換排序約 500 → 200 ms；剩下的慢原因不明，導入 WPF UI 後再量，見 `docs/wpf-mvvm.md`）；WPF 的樣式與主題（例如 .NET 內建的 Fluent 主題或 WPF UI 等套件），欄位大致固定後再做；標籤篩選列標籤多時會把表格往下擠，要限制高度或可收合；作者、社團、系列、標籤的輸入框改用 AutoSuggestBox（列出包含輸入文字的選項、打字時自動展開）
 3. 多網址（各自的購買狀態、語言）與 DLC／追加內容
 4. 封面：上傳、從商店抓；作者、社團、系列也有封面
 5. 作者、社團、系列的管理：網址、封面、別名、備註、改名；依作者篩選與系列下拉篩選（`?seriesId=`），選了作者時系列只列他的；系列自動完成時同作者的排前面
@@ -70,4 +70,5 @@ dotnet ef database update --project Library.Infrastructure --startup-project Lib
 10. 商店作品查詢：DLsite 搜尋並直接加入
 11. 匯入／匯出備份、整理資料庫（含刪除沒有作品的標籤、作者、系列）、缺少資料篩選（原版 `missing=`：網址、封面、作者、系列、價格、標籤）、統計
 12. 登入（同時處理 `UseHttpsRedirection` 在 http 設定檔下的警告）
-13. README；Swagger 的 enum 顯示成名稱（`JsonStringEnumConverter`，目前顯示成整數）
+13. 手機版：網頁前端，共用同一個後端 API（原版是 PWA：HTML／CSS／JavaScript + manifest + service worker，可加到手機主畫面）；技術開始前再決定（Blazor WebAssembly、純 HTML + JS、React 等），需要先有登入
+14. README；Swagger 的 enum 顯示成名稱（`JsonStringEnumConverter`，目前顯示成整數）

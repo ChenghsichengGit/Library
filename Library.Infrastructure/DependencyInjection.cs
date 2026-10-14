@@ -1,4 +1,4 @@
-using Library.Application.Abstractions;
+﻿using Library.Application.Abstractions;
 using Library.Application.Sources;
 using Library.Infrastructure.Data;
 using Library.Infrastructure.Sources;
@@ -19,7 +19,10 @@ public static class DependencyInjection
         var connectionString = configuration.GetConnectionString("Default")
                                ?? throw new InvalidOperationException("找不到連線字串 'Default'");
 
-        services.AddDbContext<LibraryDbContext>(options => options.UseSqlServer(connectionString));
+        // 作品同時載入作者和標籤：拆成多個 SQL，避免 JOIN 後列數相乘（笛卡兒積）
+        services.AddDbContext<LibraryDbContext>(options =>
+            options.UseSqlServer(connectionString,
+                sql => sql.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
 
         // 介面要拿到同一個請求的同一個 DbContext；寫成 AddScoped<ILibraryDbContext, LibraryDbContext>() 會建出兩個
         services.AddScoped<ILibraryDbContext>(sp => sp.GetRequiredService<LibraryDbContext>());
