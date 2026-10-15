@@ -8,6 +8,8 @@
                  mc:Ignorable="d"
                  ExtendsContentIntoTitleBar="True"
                  WindowBackdropType="Mica"
+                 ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
+                 ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                  Title="管理類型" Height="450" Width="400">
     <DockPanel>
         <ui:TitleBar DockPanel.Dock="Top" Title="管理類型" />

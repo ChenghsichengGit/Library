@@ -4,11 +4,14 @@
                  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                  xmlns:vm="clr-namespace:Library.Desktop.ViewModels"
+                 d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
                  xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
                  mc:Ignorable="d"
                  Title="收藏庫" Height="700" Width="1200"
                  ExtendsContentIntoTitleBar="True"
-                 WindowBackdropType="Mica">
+                 WindowBackdropType="Mica"
+                 ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
+                 ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}">
     <DockPanel>
         <ui:TitleBar DockPanel.Dock="Top" Title="收藏庫" />
         <DockPanel Margin="8">
@@ -80,6 +83,42 @@
                     </DockPanel>
                     <!-- 上面是「從商店抓資料」，下面才是要存的表單 -->
                     <Separator Margin="0,0,0,8" />
+                    <TextBlock Text="網址" />
+                    <!-- 每一列的 DataContext 是 UrlRow；選項和命令在 MainViewModel，要經 RelativeSource 往上取 -->
+                    <ItemsControl ItemsSource="{Binding Urls}" Margin="0,2,0,8">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:UrlRow}">
+                                <StackPanel Margin="0,0,0,8">
+                                    <DockPanel>
+                                        <Button DockPanel.Dock="Right" Content="✕" Margin="4,0,0,0"
+                                                Command="{Binding DataContext.RemoveUrlCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding}" />
+                                        <TextBox Text="{Binding Url, UpdateSourceTrigger=PropertyChanged}" />
+                                    </DockPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                        <ComboBox
+                                            ItemsSource="{Binding DataContext.UrlLanguageOptions, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            DisplayMemberPath="Label" SelectedValuePath="Value"
+                                            SelectedValue="{Binding Language}" Width="90" Margin="0,0,8,0" />
+                                        <CheckBox Content="已購買" IsChecked="{Binding Purchased}" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                        <TextBox Text="{Binding PriceText, UpdateSourceTrigger=PropertyChanged}"
+                                                 Width="70" Margin="0,0,6,0" />
+                                        <TextBox Text="{Binding Currency, UpdateSourceTrigger=PropertyChanged}"
+                                                 Width="60" Margin="4,0,0,0" />
+                                        <Button Content="▲" Margin="8,0,0,0"
+                                                Command="{Binding DataContext.MoveUrlUpCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding}" />
+                                        <Button Content="▼" Margin="4,0,0,0"
+                                                Command="{Binding DataContext.MoveUrlDownCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Button Content="新增網址" Command="{Binding AddUrlCommand}" Margin="0,0,0,8" />
                     <TextBlock Text="中文名稱" />
                     <TextBox Text="{Binding TitleZh, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" />
                     <TextBlock Text="日文名稱" />
@@ -110,7 +149,6 @@
                     <TextBlock Text="評分（6 是王冠）" />
                     <ComboBox ItemsSource="{Binding ScoreOptions}" SelectedItem="{Binding Score}" Margin="0,2,0,8" />
                     <CheckBox Content="最愛" IsChecked="{Binding Favorite}" Margin="0,0,0,4" />
-                    <CheckBox Content="已購買" IsChecked="{Binding Purchased}" Margin="0,0,0,8" />
                     <TextBlock Text="上架日期" />
                     <DatePicker SelectedDate="{Binding ReleaseDate}" Margin="0,2,0,8" />
                     <TextBlock Text="備註" />

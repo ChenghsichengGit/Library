@@ -34,8 +34,18 @@ public partial class MainViewModel : ObservableObject
         new("未評價", null, 0),
     ];
 
+    /// <summary>網址的語言選項；"" 是未指定。</summary>
+    private static readonly UrlLanguageOption[] AllUrlLanguageOptions =
+    [
+        new("未指定", ""),
+        new("中文", "zh"),
+        new("日文", "ja"),
+        new("英文", "en")
+    ];
+
     public SortOption[] SortOptions => AllSortOptions;
     public ScoreFilter[] ScoreFilters => AllScoreFilters;
+    public UrlLanguageOption[] UrlLanguageOptions => AllUrlLanguageOptions;
 
     /// <summary>標籤篩選列的選項，勾選狀態存在各選項裡（ListBox.SelectedItems 無法繫結）。</summary>
     public ObservableCollection<TagFilterOption> TagFilters { get; } = [];
@@ -199,7 +209,8 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private int _score;
     [ObservableProperty] private bool _favorite;
 
-    [ObservableProperty] private bool _purchased;
+    // 商店網址，每列各自有購買狀態；作品的「已購買」由 API 推導，表單不能直接改
+    public ObservableCollection<UrlRow> Urls { get; } = [];
 
     // 類型下拉選單以 SelectedValue 繫結到這裡（比對選項的 Id）
     [ObservableProperty] private int _workTypeId;
@@ -234,13 +245,18 @@ public partial class MainViewModel : ObservableObject
         ReleaseDate = value.ReleaseDate?.ToDateTime(TimeOnly.MinValue);
         Score = value.Score;
         Favorite = value.Favorite;
-        Purchased = value.Purchased;
         WorkTypeId = value.WorkTypeId;
         AuthorsInput = string.Join("\n", value.Authors);
         CirclesInput = string.Join("\n", value.Circles);
         TagsInput = string.Join("\n", value.Tags);
         SeriesInput = value.Series ?? "";
         ErrorMessage = "";
+
+        Urls.Clear();
+        foreach (var url in value.Urls)
+        {
+            Urls.Add(UrlRow.From(url));
+        }
     }
 
     /// <summary>「新增」：清空表單，進入新增模式。</summary>
@@ -256,7 +272,6 @@ public partial class MainViewModel : ObservableObject
         ReleaseDate = null;
         Score = 0;
         Favorite = false;
-        Purchased = false;
         WorkTypeId = DefaultWorkTypeId;
         AuthorsInput = "";
         CirclesInput = "";
@@ -264,6 +279,7 @@ public partial class MainViewModel : ObservableObject
         StoreUrl = "";
         SeriesInput = "";
         ErrorMessage = "";
+        Urls.Clear();
     }
 
     /// <summary>「儲存」：編輯中就修改（PUT），新增模式就新增（POST）。驗證失敗時顯示 API 的訊息。</summary>
@@ -273,8 +289,8 @@ public partial class MainViewModel : ObservableObject
         var request = new SaveWorkRequest(
             TitleZh, TitleJa, TitleEn, Remark,
             ReleaseDate is { } date ? DateOnly.FromDateTime(date) : null,
-            Score, Favorite, Purchased, SplitLines(AuthorsInput), SplitLines(CirclesInput),
-            WorkTypeId, SplitLines(TagsInput), SeriesInput
+            Score, Favorite, SplitLines(AuthorsInput), SplitLines(CirclesInput),
+            WorkTypeId, SplitLines(TagsInput), SeriesInput, Urls.Select(r => r.ToItem()).ToList()
         );
 
         try
@@ -363,7 +379,10 @@ public partial class MainViewModel : ObservableObject
             AuthorsInput = KeepIfEmpty(string.Join("\n", info.Authors), AuthorsInput);
             CirclesInput = KeepIfEmpty(string.Join("\n", info.Circles), CirclesInput);
             ReleaseDate = info.ReleaseDate?.ToDateTime(TimeOnly.MinValue) ?? ReleaseDate;
-
+            // 抓取用的網址就是這部作品的網址；清單裡已經有的不再加
+            var url = StoreUrl.Trim();
+            if (!Urls.Any(r => r.Url.Trim().Equals(url, StringComparison.OrdinalIgnoreCase)))
+                Urls.Add(new UrlRow { Url = url });
             ErrorMessage = "";
         }
         catch (ApiValidationException ex)
@@ -417,6 +436,31 @@ public partial class MainViewModel : ObservableObject
         {
             StatusMessage = "連不上 API，請確認 Library.Api 有在執行";
         }
+    }
+
+    /// <summary>表單的網址清單多一列空白的；沒填就存檔時由 API 略過。</summary>
+    [RelayCommand]
+    private void AddUrl() => Urls.Add(new UrlRow());
+
+    // 帶參數的命令：每一列的按鈕以 CommandParameter="{Binding}" 傳入自己
+    [RelayCommand]
+    private void RemoveUrl(UrlRow row) => Urls.Remove(row);
+
+    // 清單順序就是存檔的 Position；Move 只移動那一列，畫面不會整個重建
+    [RelayCommand]
+    private void MoveUrlUp(UrlRow row)
+    {
+        var i = Urls.IndexOf(row);
+        if (i > 0)
+            Urls.Move(i, i - 1);
+    }
+
+    [RelayCommand]
+    private void MoveUrlDown(UrlRow row)
+    {
+        var i = Urls.IndexOf(row);
+        if (i < Urls.Count - 1)
+            Urls.Move(i, i + 1);
     }
 
     private bool CanDelete() => EditingId is not null;

@@ -5,3 +5,6 @@ public record SortOption(string Label, string Value);
 
 /// <summary>評分篩選下拉選單的選項：Min／Max 對應 API 的 minScore／maxScore，null 代表不限。</summary>
 public record ScoreFilter(string Label, int? Min, int? Max);
+
+/// <summary>網址語言下拉選單的選項：Value 是送給 API 的 language，"" 代表未指定。</summary>
+public record UrlLanguageOption(string Label, string Value);

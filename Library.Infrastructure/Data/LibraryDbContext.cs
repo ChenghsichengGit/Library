@@ -82,6 +82,14 @@ public class LibraryDbContext : DbContext, ILibraryDbContext
             .HasOne(w => w.Series)
             .WithMany(s => s.Works)
             .OnDelete(DeleteBehavior.SetNull);
+
+        // 網址：沒有 DbSet，表名要自己指定；必填外鍵預設 Cascade，刪除作品時一起刪
+        modelBuilder.Entity<WorkUrl>().ToTable("WorkUrls");
+        // 精度寫在這裡而不是 Entity 的 [Precision]，Domain 才不必依賴 EF Core
+        modelBuilder.Entity<WorkUrl>().Property(u => u.Price).HasPrecision(12, 2);
+        // 存名稱，資料庫看得懂，日後調整 enum 順序也不影響舊資料
+        modelBuilder.Entity<WorkUrl>().Property(u => u.Language).HasConversion<string>().HasMaxLength(20);
+        modelBuilder.Entity<WorkUrl>().HasQueryFilter(wu => wu.Work.DeletedAt == null);
     }
 
     // 所有 DateTime 讀出時標記為 UTC，JSON 才會帶 Z

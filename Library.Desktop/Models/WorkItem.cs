@@ -22,7 +22,8 @@ public record WorkItem(
     string WorkType,
     string[] Tags,
     int? SeriesId,
-    string? Series)
+    string? Series,
+    WorkUrlItem[] Urls)
 {
     // 以下只給畫面顯示用
 

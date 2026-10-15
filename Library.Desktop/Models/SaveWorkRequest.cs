@@ -11,10 +11,10 @@ public record SaveWorkRequest(
     DateOnly? ReleaseDate,
     int Score,
     bool Favorite,
-    bool Purchased,
-    // PUT 是整筆取代：沒送的話修改作品時作者、社團、標籤會被清空
+    // PUT 是整筆取代：沒送的話修改作品時作者、社團、標籤、網址會被清空
     List<string> Authors,
     List<string> Circles,
     int WorkTypeId,
     List<string> Tags,
-    string? Series);
+    string? Series,
+    List<WorkUrlItem> Urls);

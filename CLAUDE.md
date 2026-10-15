@@ -60,7 +60,7 @@ dotnet ef database update --project Library.Infrastructure --startup-project Lib
 
 1. ~~作品欄位補齊：類型、標籤、系列、修改時間；WPF 依類型篩選~~（已完成）
 2. UI 美化與效能：（已完成：預設 SplitQuery、作品表格改用 ListView，換排序約 500 → 200 ms；導入 WPF UI（深色主題、`FluentWindow`、表格用 `ui:ListView`／`ui:GridView`），重新量測仍約 200 ms，剩下的慢原因不明、先不處理，見 `docs/wpf-mvvm.md`）；重新排版工具列、表單，工具列下拉選單的寬度放不下文字，最愛／已購買欄改用 `CellTemplate`；標籤篩選列標籤多時會把表格往下擠，要限制高度或可收合；作者、社團、系列、標籤的輸入框改用 AutoSuggestBox（列出包含輸入文字的選項、打字時自動展開）
-3. 多網址（各自的購買狀態、語言）與 DLC／追加內容
+3. 多網址與 DLC／追加內容（網址已完成：`WorkUrls` 一對多 + Cascade、`UrlNormalizer` 正規化後去重複、存檔整批取代、已購買改由網址推導（刪除 `Works.Purchased`）、`PATCH /api/works/{id}/urls/{position}/purchased`、enum 在 JSON 用名稱、WPF 表單的網址清單（`UrlRow`、`RelativeSource`）；剩下 DLC：`WorkDlcs`、「還有 DLC 沒買」篩選）
 4. 封面：上傳、從商店抓；作者、社團、系列也有封面
 5. 作者、社團、系列的管理：網址、封面、別名、備註、改名；依作者篩選與系列下拉篩選（`?seriesId=`），選了作者時系列只列他的；系列自動完成時同作者的排前面
 6. 外部來源補齊：DLsite、DMM／FANZA、通用 og 標籤；抓取時也帶回標籤（Steam genres、DLsite ジャンル）
@@ -71,4 +71,4 @@ dotnet ef database update --project Library.Infrastructure --startup-project Lib
 11. 匯入／匯出備份、整理資料庫（含刪除沒有作品的標籤、作者、系列）、缺少資料篩選（原版 `missing=`：網址、封面、作者、系列、價格、標籤）、統計
 12. 登入（同時處理 `UseHttpsRedirection` 在 http 設定檔下的警告）
 13. 手機版：網頁前端，共用同一個後端 API（原版是 PWA：HTML／CSS／JavaScript + manifest + service worker，可加到手機主畫面）；技術開始前再決定（Blazor WebAssembly、純 HTML + JS、React 等），需要先有登入
-14. README；Swagger 的 enum 顯示成名稱（`JsonStringEnumConverter`，目前顯示成整數）
+14. README（Swagger 的 enum 顯示成名稱已在第 3 步完成）

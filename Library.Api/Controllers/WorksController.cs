@@ -79,4 +79,12 @@ public class WorksController : ControllerBase
         if (success) return NoContent();
         return NotFound();
     }
+
+    /// <summary>PATCH /api/works/5/urls/0/purchased：切換某一個網址的購買狀態。成功回 204，作品或網址不存在回 404。</summary>
+    [HttpPatch("{id:int}/urls/{position:int}/purchased")]
+    public async Task<IActionResult> SetUrlPurchased(int id, int position, SetPurchasedRequest request)
+    {
+        var success = await _works.SetUrlPurchasedAsync(id, position, request.Purchased!.Value);
+        return success ? NoContent() : NotFound();
+    }
 }

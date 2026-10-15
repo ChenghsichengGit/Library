@@ -1,6 +1,7 @@
 ﻿using Library.Application.Abstractions;
 using Library.Application.Dtos;
 using Library.Application.Exceptions;
+using Library.Application.Urls;
 using Library.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -33,6 +34,7 @@ public class WorkService
             .Include(w => w.WorkType)
             .Include(w => w.Tags)
             .Include(w => w.Series)
+            .Include(w => w.Urls)
             .AsNoTracking();
 
         // 比對三種語言的名稱而不是 Title，用任一語言都搜得到
@@ -51,7 +53,7 @@ public class WorkService
             works = works.Where(w => w.Favorite == query.Favorite);
 
         if (query.Purchased != null)
-            works = works.Where(w => w.Purchased == query.Purchased);
+            works = works.Where(w => w.Urls.Any(u => u.Purchased) == query.Purchased);
 
         if (query.WorkTypeId != null)
             works = works.Where(w => w.WorkTypeId == query.WorkTypeId);
@@ -114,6 +116,7 @@ public class WorkService
             .Include(w => w.WorkType)
             .Include(w => w.Tags)
             .Include(w => w.Series)
+            .Include(w => w.Urls)
             .AsNoTracking()
             .FirstOrDefaultAsync(w => w.Id == id);
 
@@ -147,11 +150,12 @@ public class WorkService
     /// </summary>
     public async Task<bool> UpdateAsync(int id, SaveWorkRequest request)
     {
-        // Include 舊的關聯：Clear() 才刪得掉，Series 設成 null 時 EF Core 才看得出變化
+        // Include 舊的關聯：Clear() 才刪得掉（網址會被刪除），Series 設成 null 時 EF Core 才看得出變化
         var work = await _db.Works
             .Include(w => w.Creators)
             .Include(w => w.Tags)
             .Include(w => w.Series)
+            .Include(w => w.Urls)
             .FirstOrDefaultAsync(w => w.Id == id);
         if (work is null)
             return false;
@@ -181,8 +185,27 @@ public class WorkService
         return true;
     }
 
+    /// <summary>切換某一個網址的購買狀態，同時更新修改時間；作品或該位置的網址不存在時回傳 false。</summary>
+    public async Task<bool> SetUrlPurchasedAsync(int id, int position, bool purchased)
+    {
+        var work = await _db.Works
+            .Include(w => w.Urls)
+            .FirstOrDefaultAsync(w => w.Id == id);
+
+        // 作品不存在或沒有這個位置，兩種都是 null
+        var url = work?.Urls.FirstOrDefault(u => u.Position == position);
+        if (url is null)
+            return false;
+
+        url.Purchased = purchased;
+        work!.UpdatedAt = _time.GetUtcNow().UtcDateTime;
+
+        await _db.SaveChangesAsync();
+        return true;
+    }
+
     /// <summary>
-    /// 新增與修改共用：把 request 填進 work，並把作者、社團、標籤整份換成 request 的名單、設定系列（名字已存在就沿用）。
+    /// 新增與修改共用：把 request 填進 work，並把作者、社團、標籤、網址整份換成 request 的內容、設定系列（名字已存在就沿用）。
     /// 只改記憶體，由呼叫端存檔；不設定建立時間。
     /// </summary>
     private async Task ApplyAsync(Work work, SaveWorkRequest request)
@@ -194,7 +217,6 @@ public class WorkService
         work.ReleaseDate = request.ReleaseDate;
         work.Score = request.Score ?? 0;
         work.Favorite = request.Favorite ?? false;
-        work.Purchased = request.Purchased ?? false;
 
         // [Required] 已擋掉 null。先查類型再處理作者，不存在就不必多查一次資料庫
         var typeId = request.WorkTypeId!.Value;
@@ -243,6 +265,27 @@ public class WorkService
         {
             work.Series = await _db.Series.FirstOrDefaultAsync(s => s.Name == seriesName)
                           ?? new Series { Name = seriesName };
+        }
+
+        // 空白列略過；正規化後相同的只留第一個。Position 用整理後的索引
+        var urls = (request.Urls ?? [])
+            .Where(u => !string.IsNullOrWhiteSpace(u.Url))
+            .DistinctBy(u => UrlNormalizer.Normalize(u.Url))
+            .ToList();
+
+        // 外鍵必填，移出清單的網址由 EF 刪除（孤兒刪除）
+        work.Urls.Clear();
+        for (var i = 0; i < urls.Count; i++)
+        {
+            work.Urls.Add(new WorkUrl
+            {
+                Position = i,
+                Url = urls[i].Url!.Trim(),
+                Purchased = urls[i].Purchased,
+                Language = urls[i].Language,
+                Price = urls[i].Price,
+                Currency = urls[i].Currency?.Trim().ToUpperInvariant() ?? ""
+            });
         }
 
         // 新建的放回 Dictionary：作者和社團是同一個新名字時，才不會建立兩次

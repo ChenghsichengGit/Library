@@ -1,6 +1,7 @@
 ﻿using Library.Application.Dtos;
 using Library.Application.Exceptions;
 using Library.Application.Services;
+using Library.Domain.Entities;
 using Library.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Time.Testing;
@@ -342,6 +343,190 @@ public class WorkServiceTests(SqlServerFixture fixture) : DatabaseTestBase(fixtu
             var result = await CreateService(db).GetByIdAsync(id);
 
             Assert.Equal(["B"], result!.Authors);
+        }
+    }
+
+    // 防：空白列沒濾掉、正規化後相同的網址存兩次、留下後出現的那個、Position 用了 request 的索引、GetByIdAsync 漏了 Include
+    [Fact]
+    public async Task CreateAsync_SavesUrls_SkipsBlankAndDuplicates()
+    {
+        int id;
+        await using (var db = CreateDbContext())
+        {
+            var dto = await CreateService(db).CreateAsync(new SaveWorkRequest
+            {
+                TitleJa = "テスト",
+                WorkTypeId = 1,
+                Urls =
+                [
+                    new SaveWorkUrlRequest { Url = "  https://store.steampowered.com/app/620/  ", Purchased = true },
+                    new SaveWorkUrlRequest { Url = "" },
+                    new SaveWorkUrlRequest { Url = "https://www.dlsite.com/work/RJ123.html", Language = UrlLanguage.Ja },
+                    new SaveWorkUrlRequest { Url = "store.steampowered.com/app/620" }
+                ]
+            });
+            id = dto.Id;
+        }
+
+        await using (var db = CreateDbContext())
+        {
+            var result = await CreateService(db).GetByIdAsync(id);
+
+            Assert.Equal(2, result!.Urls.Length);
+            Assert.Equal("https://store.steampowered.com/app/620/", result.Urls[0].Url);
+            Assert.True(result.Urls[0].Purchased);
+            Assert.Equal("https://www.dlsite.com/work/RJ123.html", result.Urls[1].Url);
+            Assert.Equal(UrlLanguage.Ja, result.Urls[1].Language);
+        }
+    }
+
+    // 防：已購買的推導寫成 All 或寫死 false
+    [Fact]
+    public async Task GetByIdAsync_PurchasedWhenAnyUrlPurchased()
+    {
+        int id;
+        await using (var db = CreateDbContext())
+        {
+            var dto = await CreateService(db).CreateAsync(new SaveWorkRequest
+            {
+                TitleJa = "テスト",
+                WorkTypeId = 1,
+                Urls =
+                [
+                    new SaveWorkUrlRequest { Url = "https://a.example.com" },
+                    new SaveWorkUrlRequest { Url = "https://b.example.com", Purchased = true }
+                ]
+            });
+            id = dto.Id;
+        }
+
+        await using (var db = CreateDbContext())
+        {
+            var result = await CreateService(db).GetByIdAsync(id);
+
+            Assert.True(result!.Purchased);
+        }
+    }
+
+    // 防：篩選失效（回傳全部）、條件寫反；沒有網址的作品算未購買
+    [Theory]
+    [InlineData(true, new[] { "一買一沒買" })]
+    [InlineData(false, new[] { "都沒買", "沒有網址" })]
+    public async Task GetWorksAsync_FiltersByPurchased(bool purchased, string[] expected)
+    {
+        await using (var db = CreateDbContext())
+        {
+            var service = CreateService(db);
+            await service.CreateAsync(new SaveWorkRequest
+            {
+                TitleZh = "一買一沒買",
+                WorkTypeId = 1,
+                Urls =
+                [
+                    new SaveWorkUrlRequest { Url = "https://a.example.com", Purchased = true },
+                    new SaveWorkUrlRequest { Url = "https://b.example.com" }
+                ]
+            });
+            await service.CreateAsync(new SaveWorkRequest
+            {
+                TitleZh = "都沒買",
+                WorkTypeId = 1,
+                Urls = [new SaveWorkUrlRequest { Url = "https://c.example.com" }]
+            });
+            await service.CreateAsync(new SaveWorkRequest { TitleZh = "沒有網址", WorkTypeId = 1 });
+        }
+
+        await using var verifyDb = CreateDbContext();
+        var result = await CreateService(verifyDb).GetWorksAsync(new WorkQuery { Purchased = purchased });
+
+        Assert.Equal(expected.Order(), result.Select(w => w.Title).Order());
+    }
+
+    // 防：改到別的網址（Position 比對錯）、沒存檔、沒更新修改時間
+    [Fact]
+    public async Task SetUrlPurchasedAsync_ChangesOnlyThatUrl()
+    {
+        int id;
+        await using (var db = CreateDbContext())
+        {
+            var dto = await CreateService(db).CreateAsync(new SaveWorkRequest
+            {
+                TitleJa = "テスト",
+                WorkTypeId = 1,
+                Urls = [new SaveWorkUrlRequest { Url = "https://a.example.com" }, new SaveWorkUrlRequest { Url = "https://b.example.com" }]
+            });
+            id = dto.Id;
+        }
+
+        _time.Advance(TimeSpan.FromDays(1));
+        await using (var db = CreateDbContext())
+        {
+            Assert.True(await CreateService(db).SetUrlPurchasedAsync(id, 1, true));
+        }
+
+        await using (var db = CreateDbContext())
+        {
+            var result = await CreateService(db).GetByIdAsync(id);
+
+            Assert.Equal([false, true], result!.Urls.Select(u => u.Purchased));
+            Assert.Equal(new DateTime(2026, 1, 2, 12, 0, 0), result.UpdatedAt);
+        }
+    }
+
+    // 作品不存在、位置超出範圍都是 false（Controller 轉成 404）
+    [Fact]
+    public async Task SetUrlPurchasedAsync_NotFound_ReturnsFalse()
+    {
+        int id;
+        await using (var db = CreateDbContext())
+        {
+            var dto = await CreateService(db).CreateAsync(new SaveWorkRequest
+            {
+                TitleJa = "テスト",
+                WorkTypeId = 1,
+                Urls = [new SaveWorkUrlRequest { Url = "https://a.example.com" }]
+            });
+            id = dto.Id;
+        }
+
+        await using var verifyDb = CreateDbContext();
+        var service = CreateService(verifyDb);
+
+        Assert.False(await service.SetUrlPurchasedAsync(999999, 0, true));
+        Assert.False(await service.SetUrlPurchasedAsync(id, 1, true));
+    }
+
+    // 防：UpdateAsync 漏了 Include(Urls)，Clear() 刪不到舊網址，結果 A、B、C 都在
+    [Fact]
+    public async Task UpdateAsync_ReplacesUrls()
+    {
+        int id;
+        await using (var db = CreateDbContext())
+        {
+            var dto = await CreateService(db).CreateAsync(new SaveWorkRequest
+            {
+                TitleJa = "テスト",
+                WorkTypeId = 1,
+                Urls = [new SaveWorkUrlRequest { Url = "https://a.example.com" }, new SaveWorkUrlRequest { Url = "https://b.example.com" }]
+            });
+            id = dto.Id;
+        }
+
+        await using (var db = CreateDbContext())
+        {
+            await CreateService(db).UpdateAsync(id, new SaveWorkRequest
+            {
+                TitleJa = "テスト",
+                WorkTypeId = 1,
+                Urls = [new SaveWorkUrlRequest { Url = "https://c.example.com" }]
+            });
+        }
+
+        await using (var db = CreateDbContext())
+        {
+            var result = await CreateService(db).GetByIdAsync(id);
+
+            Assert.Equal(["https://c.example.com"], result!.Urls.Select(u => u.Url));
         }
     }
 

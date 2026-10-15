@@ -24,10 +24,11 @@ public record WorkDto(
     string WorkType,
     string[] Tags,
     int? SeriesId,
-    string? Series)
+    string? Series,
+    WorkUrlDto[] Urls)
 {
     /// <summary>
-    /// 從 Work 建立 WorkDto。查詢時要 Include Creators（含 Creator）、WorkType、Tags 與 Series。
+    /// 從 Work 建立 WorkDto。查詢時要 Include Creators（含 Creator）、WorkType、Tags、Series 與 Urls。
     /// </summary>
     public static WorkDto From(Work w) =>
         new(
@@ -40,7 +41,8 @@ public record WorkDto(
             w.ReleaseDate,
             w.Score,
             w.Favorite,
-            w.Purchased,
+            // 已購買不存欄位，由任一網址已購買推導
+            w.Urls.Any(u => u.Purchased),
             w.CreatedAt,
             w.UpdatedAt,
             // 依名字排序：資料庫不保證回傳順序
@@ -50,5 +52,8 @@ public record WorkDto(
             w.WorkType.Name,
             w.Tags.Select(t => t.Name).Order().ToArray(),
             w.SeriesId,
-            w.Series?.Name);
+            w.Series?.Name,
+            w.Urls.OrderBy(u => u.Position)
+                .Select(u => new WorkUrlDto(u.Url, u.Purchased, u.Language, u.Price, u.Currency))
+                .ToArray());
 }

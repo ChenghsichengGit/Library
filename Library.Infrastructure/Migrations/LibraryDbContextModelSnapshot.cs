@@ -17,7 +17,7 @@ namespace Library.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.12")
+                .HasAnnotation("ProductVersion", "10.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -100,9 +100,6 @@ namespace Library.Infrastructure.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<bool>("Favorite")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("Purchased")
                         .HasColumnType("bit");
 
                     b.Property<DateOnly?>("ReleaseDate")
@@ -239,6 +236,48 @@ namespace Library.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Library.Domain.Entities.WorkUrl", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("nvarchar(8)");
+
+                    b.Property<string>("Language")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("Price")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<bool>("Purchased")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("WorkId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WorkId");
+
+                    b.ToTable("WorkUrls", (string)null);
+                });
+
             modelBuilder.Entity("TagWork", b =>
                 {
                     b.Property<int>("TagsId")
@@ -291,6 +330,17 @@ namespace Library.Infrastructure.Migrations
                     b.Navigation("Work");
                 });
 
+            modelBuilder.Entity("Library.Domain.Entities.WorkUrl", b =>
+                {
+                    b.HasOne("Library.Domain.Entities.Work", "Work")
+                        .WithMany("Urls")
+                        .HasForeignKey("WorkId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Work");
+                });
+
             modelBuilder.Entity("TagWork", b =>
                 {
                     b.HasOne("Library.Domain.Entities.Tag", null)
@@ -319,6 +369,8 @@ namespace Library.Infrastructure.Migrations
             modelBuilder.Entity("Library.Domain.Entities.Work", b =>
                 {
                     b.Navigation("Creators");
+
+                    b.Navigation("Urls");
                 });
 
             modelBuilder.Entity("Library.Domain.Entities.WorkType", b =>

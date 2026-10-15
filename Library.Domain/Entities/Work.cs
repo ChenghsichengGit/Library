@@ -33,9 +33,6 @@ public class Work
 
     public bool Favorite { get; set; }
 
-    /// <summary>已購買。暫時的欄位，之後改成由各商店網址的購買狀態推導。</summary>
-    public bool Purchased { get; set; }
-
     /// <summary>加入收藏的時間（UTC）。</summary>
     public DateTime CreatedAt { get; set; }
 
@@ -58,4 +55,7 @@ public class Work
     public int? SeriesId { get; set; }
 
     public Series? Series { get; set; }
+
+    /// <summary>商店網址，依 Position 排序；作品的「已購買」由任一網址已購買推導。</summary>
+    public List<WorkUrl> Urls { get; set; } = [];
 }
