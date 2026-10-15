@@ -41,6 +41,11 @@ public record WorkItem(
         _ => new string('★', Score)
     };
 
+    // 表格只標出「是」的作品，True／False 整欄都是字，看不出哪些有勾
+    public string FavoriteText => Favorite ? "♥" : "";
+
+    public string PurchasedText => Purchased ? "✓" : "";
+
     /// <summary>表格用「、」接成一行；表單編輯用換行（MainViewModel.AuthorsInput）。</summary>
     public string AuthorsText => string.Join("、", Authors);
 

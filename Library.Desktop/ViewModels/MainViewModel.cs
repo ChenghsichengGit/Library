@@ -50,6 +50,10 @@ public partial class MainViewModel : ObservableObject
     /// <summary>標籤篩選列的選項，勾選狀態存在各選項裡（ListBox.SelectedItems 無法繫結）。</summary>
     public ObservableCollection<TagFilterOption> TagFilters { get; } = [];
 
+    /// <summary>標籤篩選區的標題；收合時也看得出有沒有勾選標籤。</summary>
+    public string TagFilterHeader =>
+        TagFilters.Count(t => t.IsSelected) is var n and > 0 ? $"標籤篩選（已選 {n} 個）" : "標籤篩選";
+
     // 篩選與排序條件（上方工具列）
     [ObservableProperty] private string _searchText = "";
     [ObservableProperty] private bool _onlyFavorite;
@@ -102,6 +106,8 @@ public partial class MainViewModel : ObservableObject
             await LoadSeriesAsync();
 
         StatusMessage = "載入中…";
+        // 勾選標籤會觸發這裡重新查詢，順便更新標題的已選數量
+        OnPropertyChanged(nameof(TagFilterHeader));
         try
         {
             var query = new WorkListQuery
