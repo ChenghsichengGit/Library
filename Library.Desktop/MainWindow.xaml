@@ -12,20 +12,6 @@
                  WindowBackdropType="Mica"
                  ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
                  ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}">
-    <ui:FluentWindow.Resources>
-        <!-- 表單欄位上方的小標 -->
-        <Style x:Key="FieldLabel" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="12" />
-            <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
-            <Setter Property="Margin" Value="0,0,0,2" />
-        </Style>
-        <!-- 表單分區的標題 -->
-        <Style x:Key="SectionHeader" TargetType="TextBlock">
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Margin" Value="0,8,0,6" />
-        </Style>
-    </ui:FluentWindow.Resources>
-
     <DockPanel>
         <ui:TitleBar DockPanel.Dock="Top" Title="收藏庫" />
         <DockPanel Margin="12,4,12,12">

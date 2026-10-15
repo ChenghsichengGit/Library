@@ -59,7 +59,7 @@ dotnet ef database update --project Library.Infrastructure --startup-project Lib
 目標是和原本的 Node 版（`F:\tool\media-library`）功能一樣，規劃前先對照它的 `schema.sql`、`server.js`、`lib/scrapers.js`、`public/app.js`，不可削減功能。剩下的步驟：
 
 1. ~~作品欄位補齊：類型、標籤、系列、修改時間；WPF 依類型篩選~~（已完成）
-2. UI 美化與效能：（已完成：預設 SplitQuery、作品表格改用 ListView，換排序約 500 → 200 ms；導入 WPF UI（深色主題、`FluentWindow`、表格用 `ui:ListView`／`ui:GridView`），重新量測仍約 200 ms，剩下的慢原因不明、先不處理，見 `docs/wpf-mvvm.md`；主視窗版面整理：WPF UI 按鈕與圖示、篩選列 `WrapPanel`、標籤篩選可收合並顯示已選數量、表單分區且儲存／刪除固定在底部、表格最愛／已購買只顯示 ♥／✓；`d:DataContext`）；剩下：作者、社團、系列、標籤的輸入框改用 AutoSuggestBox（列出包含輸入文字的選項、打字時自動展開）；類型管理視窗的版面
+2. UI 美化與效能：（已完成：預設 SplitQuery、作品表格改用 ListView，換排序約 500 → 200 ms；導入 WPF UI（深色主題、`FluentWindow`、表格用 `ui:ListView`／`ui:GridView`），重新量測仍約 200 ms，剩下的慢原因不明、先不處理，見 `docs/wpf-mvvm.md`；主視窗版面整理：WPF UI 按鈕與圖示、篩選列 `WrapPanel`、標籤篩選可收合並顯示已選數量、表單分區且儲存／刪除固定在底部、表格最愛／已購買只顯示 ♥／✓；`d:DataContext`）；剩下：類型管理視窗的版面（AutoSuggestBox 移到第 15 步）
 3. 多網址與 DLC／追加內容（網址已完成：`WorkUrls` 一對多 + Cascade、`UrlNormalizer` 正規化後去重複、存檔整批取代、已購買改由網址推導（刪除 `Works.Purchased`）、`PATCH /api/works/{id}/urls/{position}/purchased`、enum 在 JSON 用名稱、WPF 表單的網址清單（`UrlRow`、`RelativeSource`）；剩下 DLC：`WorkDlcs`、「還有 DLC 沒買」篩選）
 4. 封面：上傳、從商店抓；作者、社團、系列也有封面
 5. 作者、社團、系列的管理：網址、封面、別名、備註、改名；依作者篩選與系列下拉篩選（`?seriesId=`），選了作者時系列只列他的；系列自動完成時同作者的排前面
@@ -72,3 +72,4 @@ dotnet ef database update --project Library.Infrastructure --startup-project Lib
 12. 登入（同時處理 `UseHttpsRedirection` 在 http 設定檔下的警告）
 13. 手機版：網頁前端，共用同一個後端 API（原版是 PWA：HTML／CSS／JavaScript + manifest + service worker，可加到手機主畫面）；技術開始前再決定（Blazor WebAssembly、純 HTML + JS、React 等），需要先有登入
 14. README（Swagger 的 enum 顯示成名稱已在第 3 步完成）
+15. 作者、社團、系列、標籤的輸入框改用 AutoSuggestBox（原版的 `attachAutocomplete`：列出包含輸入文字的選項、打字時自動展開）

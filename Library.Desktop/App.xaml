@@ -10,6 +10,19 @@
                 <ui:ThemesDictionary Theme="Dark" />
                 <ui:ControlsDictionary />
             </ResourceDictionary.MergedDictionaries>
+
+            <!-- 各視窗共用的文字樣式，以 Style="{StaticResource …}" 套用 -->
+            <!-- 表單欄位上方的小標 -->
+            <Style x:Key="FieldLabel" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+                <Setter Property="Margin" Value="0,0,0,2" />
+            </Style>
+            <!-- 表單分區的標題 -->
+            <Style x:Key="SectionHeader" TargetType="TextBlock">
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="Margin" Value="0,8,0,6" />
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>
