@@ -90,6 +90,11 @@ public class LibraryDbContext : DbContext, ILibraryDbContext
         // 存名稱，資料庫看得懂，日後調整 enum 順序也不影響舊資料
         modelBuilder.Entity<WorkUrl>().Property(u => u.Language).HasConversion<string>().HasMaxLength(20);
         modelBuilder.Entity<WorkUrl>().HasQueryFilter(wu => wu.Work.DeletedAt == null);
+
+        // DLC：設定同網址（沒有語言欄位）
+        modelBuilder.Entity<WorkDlc>().ToTable("WorkDlcs");
+        modelBuilder.Entity<WorkDlc>().Property(d => d.Price).HasPrecision(12, 2);
+        modelBuilder.Entity<WorkDlc>().HasQueryFilter(wd => wd.Work.DeletedAt == null);
     }
 
     // 所有 DateTime 讀出時標記為 UTC，JSON 才會帶 Z

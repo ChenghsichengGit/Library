@@ -6,7 +6,7 @@
                  xmlns:vm="clr-namespace:Library.Desktop.ViewModels"
                  xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
                  mc:Ignorable="d"
-                 d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
+                 d:DataContext="{d:DesignInstance Type=vm:DesignMainViewModel, IsDesignTimeCreatable=True}"
                  Title="收藏庫" Height="800" Width="1320"
                  ExtendsContentIntoTitleBar="True"
                  WindowBackdropType="Mica"
@@ -45,6 +45,7 @@
                 <ComboBox ItemsSource="{Binding ScoreFilters}" SelectedItem="{Binding SelectedScoreFilter}"
                           DisplayMemberPath="Label" Width="130" Margin="0,0,8,4" />
                 <CheckBox Content="只看最愛" IsChecked="{Binding OnlyFavorite}" Margin="0,0,16,4" />
+                <CheckBox Content="DLC 沒買齊" IsChecked="{Binding DlcUnbought}" Margin="0,0,16,4" />
 
                 <TextBlock Text="排序" VerticalAlignment="Center" Margin="0,0,6,4" />
                 <ComboBox ItemsSource="{Binding SortOptions}" SelectedItem="{Binding SelectedSort}"
@@ -208,7 +209,51 @@
                         </ItemsControl>
                         <ui:Button Content="新增網址" Icon="{ui:SymbolIcon Add24}" HorizontalAlignment="Stretch"
                                    Command="{Binding AddUrlCommand}" />
-
+                        <TextBlock Text="DLC／追加內容" Style="{StaticResource SectionHeader}" />
+                        <!-- 結構同網址卡片；名稱必填，網址可省略，沒有語言 -->
+                        <ItemsControl ItemsSource="{Binding Dlcs}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vm:DlcRow}">
+                                    <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                                            CornerRadius="6" Padding="8" Margin="0,0,0,8">
+                                        <StackPanel>
+                                            <DockPanel>
+                                                <ui:Button DockPanel.Dock="Right" Icon="{ui:SymbolIcon Dismiss24}"
+                                                           ToolTip="移除這個 DLC" Margin="4,0,0,0"
+                                                           Command="{Binding DataContext.RemoveDlcCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                           CommandParameter="{Binding}" />
+                                                <ui:TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                                                            PlaceholderText="名稱" />
+                                            </DockPanel>
+                                            <ui:TextBox Text="{Binding Url, UpdateSourceTrigger=PropertyChanged}"
+                                                        PlaceholderText="網址（可省略）"
+                                                        Margin="0,6,0,0" />
+                                            <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                                <CheckBox Content="已購買" IsChecked="{Binding Purchased}" MinWidth="0" />
+                                            </StackPanel>
+                                            <DockPanel Margin="0,6,0,0">
+                                                <ui:Button DockPanel.Dock="Right" Icon="{ui:SymbolIcon ArrowDown24}"
+                                                           ToolTip="往下移" Margin="4,0,0,0"
+                                                           Command="{Binding DataContext.MoveDlcDownCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                           CommandParameter="{Binding}" />
+                                                <ui:Button DockPanel.Dock="Right" Icon="{ui:SymbolIcon ArrowUp24}"
+                                                           ToolTip="往上移" Margin="4,0,0,0"
+                                                           Command="{Binding DataContext.MoveDlcUpCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                           CommandParameter="{Binding}" />
+                                                <StackPanel Orientation="Horizontal">
+                                                    <ui:TextBox Text="{Binding PriceText, UpdateSourceTrigger=PropertyChanged}"
+                                                                PlaceholderText="價格" Width="96" />
+                                                    <ui:TextBox Text="{Binding Currency, UpdateSourceTrigger=PropertyChanged}"
+                                                                PlaceholderText="幣別" Width="72" Margin="6,0,0,0" />
+                                                </StackPanel>
+                                            </DockPanel>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <ui:Button Content="新增 DLC" Icon="{ui:SymbolIcon Add24}" HorizontalAlignment="Stretch"
+                                   Command="{Binding AddDlcCommand}" />
                         <TextBlock Text="備註" Style="{StaticResource SectionHeader}" />
                         <TextBox Text="{Binding Remark, UpdateSourceTrigger=PropertyChanged}"
                                  Height="72" TextWrapping="Wrap" AcceptsReturn="True" />

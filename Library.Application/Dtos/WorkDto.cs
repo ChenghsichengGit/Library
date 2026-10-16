@@ -25,10 +25,11 @@ public record WorkDto(
     string[] Tags,
     int? SeriesId,
     string? Series,
-    WorkUrlDto[] Urls)
+    WorkUrlDto[] Urls,
+    WorkDlcDto[] Dlcs)
 {
     /// <summary>
-    /// 從 Work 建立 WorkDto。查詢時要 Include Creators（含 Creator）、WorkType、Tags、Series 與 Urls。
+    /// 從 Work 建立 WorkDto。查詢時要 Include Creators（含 Creator）、WorkType、Tags、Series 與 Urls、Dlcs。
     /// </summary>
     public static WorkDto From(Work w) =>
         new(
@@ -55,5 +56,9 @@ public record WorkDto(
             w.Series?.Name,
             w.Urls.OrderBy(u => u.Position)
                 .Select(u => new WorkUrlDto(u.Url, u.Purchased, u.Language, u.Price, u.Currency))
-                .ToArray());
+                .ToArray(),
+            w.Dlcs.OrderBy(d => d.Position)
+                .Select(d => new WorkDlcDto(d.Name, d.Url, d.Purchased, d.Price, d.Currency))
+                .ToArray()
+        );
 }

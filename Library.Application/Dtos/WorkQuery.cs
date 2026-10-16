@@ -32,6 +32,9 @@ public class WorkQuery : IValidatableObject
     [EnumDataType(typeof(TagMatch))]
     public TagMatch TagMode { get; set; } = TagMatch.All;
 
+    // 只看還有 DLC 沒買的作品。只有 true 才篩選：「DLC 全買了」沒有用途，沒有 DLC 的作品也說不清算哪邊
+    public bool DlcUnbought { get; set; }
+
     // EnumDataType 擋下 ?sort=99 這種轉得過去但沒定義的值
     [EnumDataType(typeof(WorkSort))]
     public WorkSort Sort { get; set; } = WorkSort.CreatedAt;

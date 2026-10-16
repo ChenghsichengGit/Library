@@ -35,6 +35,7 @@ public class WorkService
             .Include(w => w.Tags)
             .Include(w => w.Series)
             .Include(w => w.Urls)
+            .Include(w => w.Dlcs)
             .AsNoTracking();
 
         // 比對三種語言的名稱而不是 Title，用任一語言都搜得到
@@ -63,6 +64,9 @@ public class WorkService
 
         if (query.MaxScore != null)
             works = works.Where(w => w.Score <= query.MaxScore);
+
+        if (query.DlcUnbought)
+            works = works.Where(w => w.Dlcs.Any(d => !d.Purchased));
 
         // 和存檔用同一套整理：清單去重複後，All 才能用「符合數 = 清單長度」判斷
         var tagNames = CleanNames(query.Tags);
@@ -117,6 +121,7 @@ public class WorkService
             .Include(w => w.Tags)
             .Include(w => w.Series)
             .Include(w => w.Urls)
+            .Include(w => w.Dlcs)
             .AsNoTracking()
             .FirstOrDefaultAsync(w => w.Id == id);
 
@@ -156,6 +161,7 @@ public class WorkService
             .Include(w => w.Tags)
             .Include(w => w.Series)
             .Include(w => w.Urls)
+            .Include(w => w.Dlcs)
             .FirstOrDefaultAsync(w => w.Id == id);
         if (work is null)
             return false;
@@ -285,6 +291,25 @@ public class WorkService
                 Language = urls[i].Language,
                 Price = urls[i].Price,
                 Currency = urls[i].Currency?.Trim().ToUpperInvariant() ?? ""
+            });
+        }
+
+        // DLC 以名稱為準，空白名稱的列略過；不去除重複：沒有網址的 DLC 正規化後都是 null，會被當成同一個
+        var dlcs = (request.Dlcs ?? [])
+            .Where(d => !string.IsNullOrWhiteSpace(d.Name))
+            .ToList();
+
+        work.Dlcs.Clear();
+        for (var i = 0; i < dlcs.Count; i++)
+        {
+            work.Dlcs.Add(new WorkDlc
+            {
+                Position = i,
+                Name = dlcs[i].Name!.Trim(),
+                Url = dlcs[i].Url?.Trim() ?? "",
+                Purchased = dlcs[i].Purchased,
+                Price = dlcs[i].Price,
+                Currency = dlcs[i].Currency?.Trim().ToUpperInvariant() ?? ""
             });
         }
 

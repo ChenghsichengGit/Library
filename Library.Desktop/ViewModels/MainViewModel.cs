@@ -62,6 +62,8 @@ public partial class MainViewModel : ObservableObject
 
     // 0 = 全部類型，送 API 時換成 null
     [ObservableProperty] private int _filterWorkTypeId;
+    // 只看還有 DLC 沒買的作品
+    [ObservableProperty] private bool _dlcUnbought;
     [ObservableProperty] private bool _tagMatchAny;
     [ObservableProperty] private SortOption _selectedSort = AllSortOptions[0];
     [ObservableProperty] private bool _sortDescending = true;
@@ -118,6 +120,7 @@ public partial class MainViewModel : ObservableObject
                 MinScore: SelectedScoreFilter.Min,
                 MaxScore: SelectedScoreFilter.Max,
                 WorkTypeId: FilterWorkTypeId == 0 ? null : FilterWorkTypeId,
+                DlcUnbought: DlcUnbought,
                 Tags: TagFilters
                     .Where(t => t.IsSelected)
                     .Select(t => t.Name)
@@ -218,6 +221,9 @@ public partial class MainViewModel : ObservableObject
     // 商店網址，每列各自有購買狀態；作品的「已購買」由 API 推導，表單不能直接改
     public ObservableCollection<UrlRow> Urls { get; } = [];
 
+    // DLC／追加內容，不影響作品的「已購買」
+    public ObservableCollection<DlcRow> Dlcs { get; } = [];
+
     // 類型下拉選單以 SelectedValue 繫結到這裡（比對選項的 Id）
     [ObservableProperty] private int _workTypeId;
 
@@ -263,6 +269,12 @@ public partial class MainViewModel : ObservableObject
         {
             Urls.Add(UrlRow.From(url));
         }
+
+        Dlcs.Clear();
+        foreach (var dlc in value.Dlcs)
+        {
+            Dlcs.Add(DlcRow.From(dlc));
+        }
     }
 
     /// <summary>「新增」：清空表單，進入新增模式。</summary>
@@ -286,6 +298,7 @@ public partial class MainViewModel : ObservableObject
         SeriesInput = "";
         ErrorMessage = "";
         Urls.Clear();
+        Dlcs.Clear();
     }
 
     /// <summary>「儲存」：編輯中就修改（PUT），新增模式就新增（POST）。驗證失敗時顯示 API 的訊息。</summary>
@@ -296,7 +309,8 @@ public partial class MainViewModel : ObservableObject
             TitleZh, TitleJa, TitleEn, Remark,
             ReleaseDate is { } date ? DateOnly.FromDateTime(date) : null,
             Score, Favorite, SplitLines(AuthorsInput), SplitLines(CirclesInput),
-            WorkTypeId, SplitLines(TagsInput), SeriesInput, Urls.Select(r => r.ToItem()).ToList()
+            WorkTypeId, SplitLines(TagsInput), SeriesInput, Urls.Select(r => r.ToItem()).ToList(),
+            Dlcs.Select(d => d.ToItem()).ToList()
         );
 
         try
@@ -469,12 +483,37 @@ public partial class MainViewModel : ObservableObject
             Urls.Move(i, i + 1);
     }
 
+    /// <summary>表單的 DLC 清單多一列空白的；沒填名稱就存檔時由 API 略過。</summary>
+    [RelayCommand]
+    private void AddDlc() => Dlcs.Add(new DlcRow());
+
+    [RelayCommand]
+    private void RemoveDlc(DlcRow row) => Dlcs.Remove(row);
+
+    // 清單順序就是存檔的 Position；Move 只移動那一列，畫面不會整個重建
+    [RelayCommand]
+    private void MoveDlcUp(DlcRow row)
+    {
+        var i = Dlcs.IndexOf(row);
+        if (i > 0)
+            Dlcs.Move(i, i - 1);
+    }
+
+    [RelayCommand]
+    private void MoveDlcDown(DlcRow row)
+    {
+        var i = Dlcs.IndexOf(row);
+        if (i < Dlcs.Count - 1)
+            Dlcs.Move(i, i + 1);
+    }
+
     private bool CanDelete() => EditingId is not null;
 
     // 篩選或排序一改就重新查詢；搜尋字不在這裡，每打一個字都查太多次
     partial void OnOnlyFavoriteChanged(bool value) => LoadCommand.Execute(null);
     partial void OnSelectedScoreFilterChanged(ScoreFilter value) => LoadCommand.Execute(null);
     partial void OnFilterWorkTypeIdChanged(int value) => LoadCommand.Execute(null);
+    partial void OnDlcUnboughtChanged(bool value) => LoadCommand.Execute(null);
     partial void OnSelectedSortChanged(SortOption value) => LoadCommand.Execute(null);
     partial void OnSortDescendingChanged(bool value) => LoadCommand.Execute(null);
     partial void OnTagMatchAnyChanged(bool value) => LoadCommand.Execute(null);

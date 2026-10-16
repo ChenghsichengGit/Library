@@ -58,4 +58,7 @@ public class Work
 
     /// <summary>商店網址，依 Position 排序；作品的「已購買」由任一網址已購買推導。</summary>
     public List<WorkUrl> Urls { get; set; } = [];
+
+    /// <summary>DLC／追加內容，依 Position 排序；不影響作品的「已購買」。</summary>
+    public List<WorkDlc> Dlcs { get; set; } = [];
 }

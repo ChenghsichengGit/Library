@@ -34,6 +34,8 @@ public class WorksApiClient
             parts.Add($"maxScore={max}");
         if (query.WorkTypeId is { } workTypeId)
             parts.Add($"workTypeId={workTypeId}");
+        if (query.DlcUnbought)
+            parts.Add("dlcUnbought=True");
 
         // 每個標籤各一個 tags=；預設是全部符合，只有「符合任一」才送 tagMode
         foreach (var tag in query.Tags)

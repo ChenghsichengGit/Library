@@ -23,7 +23,8 @@ public record WorkItem(
     string[] Tags,
     int? SeriesId,
     string? Series,
-    WorkUrlItem[] Urls)
+    WorkUrlItem[] Urls,
+    WorkDlcItem[] Dlcs)
 {
     // 以下只給畫面顯示用
 

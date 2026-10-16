@@ -60,7 +60,7 @@ dotnet ef database update --project Library.Infrastructure --startup-project Lib
 
 1. ~~作品欄位補齊：類型、標籤、系列、修改時間；WPF 依類型篩選~~（已完成）
 2. UI 美化與效能：（已完成：預設 SplitQuery、作品表格改用 ListView，換排序約 500 → 200 ms；導入 WPF UI（深色主題、`FluentWindow`、表格用 `ui:ListView`／`ui:GridView`），重新量測仍約 200 ms，剩下的慢原因不明、先不處理，見 `docs/wpf-mvvm.md`；主視窗版面整理：WPF UI 按鈕與圖示、篩選列 `WrapPanel`、標籤篩選可收合並顯示已選數量、表單分區且儲存／刪除固定在底部、表格最愛／已購買只顯示 ♥／✓；`d:DataContext`）；剩下：類型管理視窗的版面（AutoSuggestBox 移到第 15 步）
-3. 多網址與 DLC／追加內容（網址已完成：`WorkUrls` 一對多 + Cascade、`UrlNormalizer` 正規化後去重複、存檔整批取代、已購買改由網址推導（刪除 `Works.Purchased`）、`PATCH /api/works/{id}/urls/{position}/purchased`、enum 在 JSON 用名稱、WPF 表單的網址清單（`UrlRow`、`RelativeSource`）；剩下 DLC：`WorkDlcs`、「還有 DLC 沒買」篩選）
+3. ~~多網址與 DLC／追加內容~~（已完成：`WorkUrls` 一對多 + Cascade、`UrlNormalizer` 正規化後去重複、存檔整批取代、已購買改由網址推導（刪除 `Works.Purchased`）、`PATCH /api/works/{id}/urls/{position}/purchased`、enum 在 JSON 用名稱、WPF 表單的網址清單（`UrlRow`、`RelativeSource`）；DLC：`WorkDlcs`，名稱必填、不去重複、不影響已購買，「還有 DLC 沒買」篩選；預覽用 `DesignMainViewModel`）
 4. 封面：上傳、從商店抓；作者、社團、系列也有封面
 5. 作者、社團、系列的管理：網址、封面、別名、備註、改名；依作者篩選與系列下拉篩選（`?seriesId=`），選了作者時系列只列他的；系列自動完成時同作者的排前面
 6. 外部來源補齊：DLsite、DMM／FANZA、通用 og 標籤；抓取時也帶回標籤（Steam genres、DLsite ジャンル）

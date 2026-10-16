@@ -45,6 +45,8 @@ public class SaveWorkRequest : IValidatableObject
     // 整份取代作品的網址；空白列與正規化後重複的由 WorkService 濾掉
     public List<SaveWorkUrlRequest>? Urls { get; set; }
 
+    public List<SaveWorkDlcRequest>? Dlcs { get; set; }
+
     /// <summary>跨欄位的驗證規則，屬性標記都通過後才會執行。</summary>
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {

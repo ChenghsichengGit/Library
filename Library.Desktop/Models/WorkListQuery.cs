@@ -10,6 +10,7 @@ public record WorkListQuery(
     int? MinScore,
     int? MaxScore,
     int? WorkTypeId,
+    bool DlcUnbought,
     List<string> Tags,
     bool TagAny,
     string Sort,
