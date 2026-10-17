@@ -1,5 +1,6 @@
 ﻿using Library.Application.Abstractions;
 using Library.Application.Sources;
+using Library.Infrastructure.Covers;
 using Library.Infrastructure.Data;
 using Library.Infrastructure.Sources;
 using Microsoft.EntityFrameworkCore;
@@ -9,11 +10,12 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Library.Infrastructure;
 
 /// <summary>
-/// Infrastructure 層的 DI 登記（資料庫、外部商店），由 Program.cs 呼叫。
+/// Infrastructure 層的 DI 登記（資料庫、外部商店、封面），由 Program.cs 呼叫。
 /// </summary>
 public static class DependencyInjection
 {
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration,
+        string coverDirectory)
     {
         // 沒設定連線字串時啟動就失敗，而不是等到第一次查詢
         var connectionString = configuration.GetConnectionString("Default")
@@ -33,6 +35,16 @@ public static class DependencyInjection
             client.BaseAddress = new Uri("https://store.steampowered.com/");
             client.Timeout = TimeSpan.FromSeconds(10);
         });
+
+        // 下載任意網站的圖片：不設 BaseAddress；有些網站會擋掉沒有 User-Agent 的請求
+        services.AddHttpClient<ICoverDownloader, HttpCoverDownloader>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(12);
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (compatible; Library/1.0)");
+        });
+
+        // 不保存任何請求的狀態，整個程式共用一個
+        services.AddSingleton<ICoverStorage>(new LocalCoverStorage(coverDirectory));
 
         return services;
     }

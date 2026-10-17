@@ -1,4 +1,5 @@
-﻿using Library.Domain.Entities;
+﻿using Library.Application.Abstractions;
+using Library.Domain.Entities;
 
 namespace Library.Application.Dtos;
 
@@ -26,12 +27,15 @@ public record WorkDto(
     int? SeriesId,
     string? Series,
     WorkUrlDto[] Urls,
-    WorkDlcDto[] Dlcs)
+    WorkDlcDto[] Dlcs,
+    string? CoverKey,
+    string? CoverUrl)
 {
     /// <summary>
     /// 從 Work 建立 WorkDto。查詢時要 Include Creators（含 Creator）、WorkType、Tags、Series 與 Urls、Dlcs。
     /// </summary>
-    public static WorkDto From(Work w) =>
+    /// <remarks>封面同時回傳 key（修改時原樣送回，否則封面會被清空）和網址（顯示用，由 storage 組出）。</remarks>
+    public static WorkDto From(Work w, ICoverStorage storage) =>
         new(
             w.Id,
             w.Title,
@@ -59,6 +63,8 @@ public record WorkDto(
                 .ToArray(),
             w.Dlcs.OrderBy(d => d.Position)
                 .Select(d => new WorkDlcDto(d.Name, d.Url, d.Purchased, d.Price, d.Currency))
-                .ToArray()
+                .ToArray(),
+            string.IsNullOrEmpty(w.CoverKey) ? null : w.CoverKey,
+            string.IsNullOrEmpty(w.CoverKey) ? null : storage.GetUrl(w.CoverKey)
         );
 }

@@ -42,6 +42,9 @@ public class Work
     /// <summary>軟刪除的時間；有值表示在「最近刪除」裡。</summary>
     public DateTime? DeletedAt { get; set; }
 
+    [MaxLength(100)]
+    public string CoverKey { get; set; } = "";
+
     /// <summary>作者與社團，以 WorkCreator.Role 區分。</summary>
     public List<WorkCreator> Creators { get; set; } = [];
 

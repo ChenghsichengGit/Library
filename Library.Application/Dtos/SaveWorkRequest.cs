@@ -27,6 +27,11 @@ public class SaveWorkRequest : IValidatableObject
     public int? Score { get; set; }
     public bool? Favorite { get; set; }
 
+    // 只接受 LocalCoverStorage 產生的 key（Guid "N" ＋ 副檔名），../ 之類的路徑進不來
+    [MaxLength(100)]
+    [RegularExpression(@"^[0-9a-f]{32}\.(jpg|png|gif|webp)$")]
+    public string? CoverKey { get; set; }
+
     // 只送名字，空白與重複由 WorkService 濾掉；[MaxLength] 加在 List 上限制的是項目數，所以名字長度在 Validate 檢查
     public List<string>? Authors { get; set; }
     public List<string>? Circles { get; set; }

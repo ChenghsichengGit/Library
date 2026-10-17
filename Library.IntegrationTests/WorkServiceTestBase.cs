@@ -6,7 +6,7 @@ using Microsoft.Extensions.Time.Testing;
 namespace Library.IntegrationTests;
 
 /// <summary>
-/// WorkService 整合測試的共用基底：假時鐘與「建立、修改、讀取」的 helper。
+/// WorkService 整合測試的共用基底：假時鐘、假封面儲存與「建立、修改、讀取」的 helper。
 /// </summary>
 /// <remarks>
 /// 每個 helper 各開一個新的 DbContext，驗證時才不會讀到追蹤中的舊資料（抓得到忘了 SaveChangesAsync、漏了 Include）。
@@ -17,7 +17,10 @@ public abstract class WorkServiceTestBase(SqlServerFixture fixture) : DatabaseTe
     // 時間固定在 2026-01-01 12:00 UTC，斷言才能精確比對；Advance 才會往前
     protected FakeTimeProvider Time { get; } = new(new DateTimeOffset(2026, 1, 1, 12, 0, 0, TimeSpan.Zero));
 
-    protected WorkService CreateService(LibraryDbContext db) => new(db, Time);
+    // 所有 helper 共用，測試才查得到刪了哪些封面
+    protected FakeCoverStorage Covers { get; } = new();
+
+    protected WorkService CreateService(LibraryDbContext db) => new(db, Covers, Time);
 
     /// <summary>新增一筆作品，回傳 Id。</summary>
     protected async Task<int> CreateWorkAsync(SaveWorkRequest request)

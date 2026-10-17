@@ -35,13 +35,16 @@ public class SteamSourceTests
             BaseAddress = new Uri("https://store.steampowered.com/")
         });
 
-    // developers 和 publishers 刻意不同，作者和社團拿反時才抓得到
-    private static string AppJson(string name, string date = "18 Apr, 2011") => $$"""
+    private const string HeaderImage = "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/620/header.jpg";
+
+    // developers 和 publishers 刻意不同，作者和社團拿反時才抓得到；headerImage 是 null 時不放這個欄位
+    private static string AppJson(string name, string date = "18 Apr, 2011", string? headerImage = HeaderImage) => $$"""
         {
           "620": {
             "success": true,
             "data": {
               "name": "{{name}}",
+              {{(headerImage is null ? "" : $"\"header_image\": \"{headerImage}\",")}}
               "developers": ["Valve"],
               "publishers": ["Valve", "EA"],
               "release_date": { "coming_soon": false, "date": "{{date}}" }
@@ -70,6 +73,17 @@ public class SteamSourceTests
         Assert.Equal(["Valve"], result.Authors);
         Assert.Equal(["Valve", "EA"], result.Circles);
         Assert.Equal(new DateOnly(2011, 4, 18), result.ReleaseDate);
+        Assert.Equal(HeaderImage, result.CoverImageUrl);
+    }
+
+    [Fact]
+    public async Task FetchAsync_NoHeaderImage_ReturnsNullCover()
+    {
+        var source = CreateSource(_ => AppJson("Portal 2", headerImage: null));
+
+        var result = await source.FetchAsync(new Uri("https://store.steampowered.com/app/620"));
+
+        Assert.Null(result!.CoverImageUrl);
     }
 
     [Theory]

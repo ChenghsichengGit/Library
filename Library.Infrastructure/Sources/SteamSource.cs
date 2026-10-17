@@ -50,7 +50,8 @@ public partial class SteamSource : IStoreSource
             TitleEn: en.Name,
             Authors: en.Developers ?? [],
             Circles: en.Publishers ?? [],
-            ReleaseDate: ParseDate(en.ReleaseDate));
+            ReleaseDate: ParseDate(en.ReleaseDate),
+            CoverImageUrl: en.HeaderImage);
     }
 
     // 沒有這個語言的名稱時 Steam 會回傳英文名稱，和英文一樣就當作沒有翻譯
@@ -92,7 +93,12 @@ public partial class SteamSource : IStoreSource
     // Steam 回應的形狀，只宣告需要的欄位；private 讓 Steam 的格式不會流出這個類別
     private record SteamResponse(bool Success, SteamApp? Data);
 
-    private record SteamApp(string Name, string[]? Developers, string[]? Publishers, SteamReleaseDate? ReleaseDate);
+    private record SteamApp(
+        string Name,
+        string[]? Developers,
+        string[]? Publishers,
+        SteamReleaseDate? ReleaseDate,
+        string? HeaderImage);
 
     private record SteamReleaseDate(string Date);
 }

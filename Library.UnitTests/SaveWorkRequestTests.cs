@@ -100,4 +100,24 @@ public class SaveWorkRequestTests
 
         Assert.Equal(expectValid, errors.Count == 0);
     }
+
+    // 只接受伺服器產生的 key（Guid "N" ＋ 副檔名），防路徑穿越；null 與 "" 代表沒有封面
+    [Theory]
+    [InlineData("3f2a9c7de1b04c5a8f6e2d1c0b9a8f7e.jpg", true)]
+    [InlineData("3f2a9c7de1b04c5a8f6e2d1c0b9a8f7e.webp", true)]
+    [InlineData(null, true)]
+    [InlineData("", true)]
+    [InlineData("../../appsettings.json", false)]
+    [InlineData("3f2a9c7de1b04c5a8f6e2d1c0b9a8f7e.exe", false)]
+    [InlineData("3F2A9C7DE1B04C5A8F6E2D1C0B9A8F7E.jpg", false)]
+    [InlineData("3f2a9c7d-e1b0-4c5a-8f6e-2d1c0b9a8f7e.jpg", false)]
+    [InlineData("3f2a9c7de1b04c5a8f6e2d1c0b9a8f7e.jpg/../x", false)]
+    public void Validate_CoverKey_OnlyServerGeneratedKey(string? coverKey, bool expectValid)
+    {
+        var request = new SaveWorkRequest { TitleZh = "TEST", WorkTypeId = 1, CoverKey = coverKey };
+
+        var errors = Validate(request);
+
+        Assert.Equal(expectValid, errors.Count == 0);
+    }
 }
