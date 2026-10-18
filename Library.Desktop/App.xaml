@@ -11,6 +11,9 @@
                 <ui:ControlsDictionary />
             </ResourceDictionary.MergedDictionaries>
 
+            <!-- bool → Visibility：true 顯示、false 隱藏 -->
+            <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+
             <!-- 各視窗共用的文字樣式，以 Style="{StaticResource …}" 套用 -->
             <!-- 表單欄位上方的小標 -->
             <Style x:Key="FieldLabel" TargetType="TextBlock">

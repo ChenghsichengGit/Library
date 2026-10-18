@@ -151,6 +151,43 @@ public class WorksApiClient
         return await _http.GetFromJsonAsync<List<SeriesItem>>("api/series") ?? [];
     }
 
+    /// <summary>POST /api/covers：上傳圖片（multipart，欄位名稱 file）。不是圖片、太大時丟 ApiValidationException。</summary>
+    public async Task<CoverUploadResult> UploadCoverAsync(byte[] content, string fileName)
+    {
+        // multipart 的一個欄位：名稱要和 CoversController.Upload 的參數名稱 file 一樣
+        using var form = new MultipartFormDataContent();
+        form.Add(new ByteArrayContent(content), "file", fileName);
+
+        var response = await _http.PostAsync("api/covers", form);
+        return await ReadCoverResultAsync(response);
+    }
+
+    /// <summary>POST /api/covers/download：請 API 從網址下載圖片。下載失敗時丟 ApiValidationException。</summary>
+    public async Task<CoverUploadResult> DownloadCoverAsync(string url)
+    {
+        // 對應後端的 DownloadRequest(string Url)，JSON 是 { "url": "…" }
+        var response = await _http.PostAsJsonAsync("api/covers/download", new { Url = url });
+        return await ReadCoverResultAsync(response);
+    }
+
+    // CoversController 的錯誤是純文字（400、502）；413 由伺服器直接擋下，沒有內容
+    private static async Task<CoverUploadResult> ReadCoverResultAsync(HttpResponseMessage response)
+    {
+        if (response.StatusCode == HttpStatusCode.RequestEntityTooLarge)
+            throw new ApiValidationException(["封面不能超過 10MB"]);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var message = await response.Content.ReadAsStringAsync();
+            throw new ApiValidationException([message]);
+        }
+
+        return (await response.Content.ReadFromJsonAsync<CoverUploadResult>())!;
+    }
+
+    /// <summary>API 回傳的相對網址（/covers/…）轉成完整網址，給 Image 顯示。</summary>
+    public string ToAbsoluteUrl(string relativeUrl) => new Uri(_http.BaseAddress!, relativeUrl).ToString();
+
     // ASP.NET Core 驗證失敗的回應，只取 errors
     private record ValidationProblem(Dictionary<string, string[]> Errors);
 }

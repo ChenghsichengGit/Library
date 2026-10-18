@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.IO;
 using System.Net.Http;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -234,6 +235,20 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private string _tagsInput = "";
     [ObservableProperty] private string _seriesInput = "";
 
+    // 封面：key 存檔時送回（PUT 是整筆取代，沒送會被清空），網址給預覽
+    [ObservableProperty] private string? _coverKey;
+
+    // 完整網址，Image 直接繫結；null 時顯示「沒有封面」的提示
+    [ObservableProperty] private string? _coverPreviewUrl;
+
+    // 縮圖和上傳中：顯示進度圈；儲存要等上傳完成，否則存進去的是舊的 CoverKey
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
+    private bool _isCoverBusy;
+
+    // 例：「封面已上傳（850KB → 120KB）」
+    [ObservableProperty] private string _coverStatus = "";
+
     // 只用來抓取資料填表單，不會存進作品
     [ObservableProperty] private string _storeUrl = "";
 
@@ -262,7 +277,11 @@ public partial class MainViewModel : ObservableObject
         CirclesInput = string.Join("\n", value.Circles);
         TagsInput = string.Join("\n", value.Tags);
         SeriesInput = value.Series ?? "";
+        CoverKey = value.CoverKey;
+        CoverPreviewUrl = value.CoverUrl is { } coverUrl ? _api.ToAbsoluteUrl(coverUrl) : null;
         ErrorMessage = "";
+        CoverStatus = "";
+        StoreUrl = "";
 
         Urls.Clear();
         foreach (var url in value.Urls)
@@ -299,10 +318,23 @@ public partial class MainViewModel : ObservableObject
         ErrorMessage = "";
         Urls.Clear();
         Dlcs.Clear();
+        CoverKey = null;
+        CoverPreviewUrl = null;
+        CoverStatus = "";
+    }
+
+    /// <summary>點了視窗的空白處：編輯中才回到新增模式；已經在新增模式就不動，打到一半的新作品才不會被清掉。</summary>
+    [RelayCommand]
+    private void Deselect()
+    {
+        if (EditingId is null)
+            return;
+
+        New();
     }
 
     /// <summary>「儲存」：編輯中就修改（PUT），新增模式就新增（POST）。驗證失敗時顯示 API 的訊息。</summary>
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanSave))]
     private async Task SaveAsync()
     {
         var request = new SaveWorkRequest(
@@ -310,8 +342,7 @@ public partial class MainViewModel : ObservableObject
             ReleaseDate is { } date ? DateOnly.FromDateTime(date) : null,
             Score, Favorite, SplitLines(AuthorsInput), SplitLines(CirclesInput),
             WorkTypeId, SplitLines(TagsInput), SeriesInput, Urls.Select(r => r.ToItem()).ToList(),
-            Dlcs.Select(d => d.ToItem()).ToList()
-        );
+            Dlcs.Select(d => d.ToItem()).ToList(), CoverKey);
 
         try
         {
@@ -377,7 +408,7 @@ public partial class MainViewModel : ObservableObject
     /// 「抓取」：依商店網址查詢，把資料填進表單，不存檔。
     /// </summary>
     /// <remarks>
-    /// 有值才覆蓋：商店沒有的欄位保留使用者已填的內容；評分、最愛、備註不碰。
+    /// 有值才覆蓋：商店沒有的欄位保留使用者已填的內容；評分、最愛、備註不碰。商店有封面時請 API 下載並換上。
     /// 不改 EditingId：新增模式下抓取就是新增，編輯中抓取就是更新那部作品。
     /// </remarks>
     [RelayCommand]
@@ -404,6 +435,10 @@ public partial class MainViewModel : ObservableObject
             if (!Urls.Any(r => r.Url.Trim().Equals(url, StringComparison.OrdinalIgnoreCase)))
                 Urls.Add(new UrlRow { Url = url });
             ErrorMessage = "";
+
+            // 其他欄位已經填好了，封面另外下載，失敗也不影響
+            if (info.CoverImageUrl is { } coverUrl)
+                await DownloadCoverAsync(coverUrl);
         }
         catch (ApiValidationException ex)
         {
@@ -507,7 +542,85 @@ public partial class MainViewModel : ObservableObject
             Dlcs.Move(i, i + 1);
     }
 
+    /// <summary>「移除封面」：只清掉表單，按儲存後後端才會刪除檔案。</summary>
+    [RelayCommand]
+    private void RemoveCover()
+    {
+        CoverKey = null;
+        CoverPreviewUrl = null;
+        CoverStatus = "";
+    }
+
+    /// <summary>縮圖後上傳，成功就換成新的封面（按儲存才會綁定到作品）。</summary>
+    [RelayCommand]
+    private async Task UploadCoverAsync(byte[] original)
+    {
+        IsCoverBusy = true;
+        CoverStatus = "";
+        try
+        {
+            // 縮圖是 CPU 運算，放到背景執行緒，畫面才不會卡住
+            var content = await Task.Run(() => CoverImageShrinker.Shrink(original));
+            var result = await _api.UploadCoverAsync(content, "cover");
+
+            CoverKey = result.Key;
+            CoverPreviewUrl = _api.ToAbsoluteUrl(result.Url);
+            ErrorMessage = "";
+            CoverStatus = content.Length < original.Length
+                ? $"封面已上傳（{original.Length / 1024}KB → {content.Length / 1024}KB）"
+                : "封面已上傳";
+        }
+        catch (ApiValidationException ex)
+        {
+            ErrorMessage = string.Join("\n", ex.Messages);
+        }
+        catch (HttpRequestException)
+        {
+            ErrorMessage = "上傳失敗，請確認 Library.Api 有在執行";
+        }
+        finally
+        {
+            // 成功、失敗都要把進度圈關掉
+            IsCoverBusy = false;
+        }
+    }
+
+    /// <summary>請 API 從網址下載封面。失敗只顯示在封面狀態，不影響其他已抓到的資料。</summary>
+    private async Task DownloadCoverAsync(string url)
+    {
+        IsCoverBusy = true;
+        CoverStatus = "";
+        try
+        {
+            var result = await _api.DownloadCoverAsync(url);
+            CoverKey = result.Key;
+            CoverPreviewUrl = _api.ToAbsoluteUrl(result.Url);
+            CoverStatus = "已從商店帶入封面";
+        }
+        // 不寫進 ErrorMessage：抓取本身成功了，那一行紅字會讓人以為全部失敗
+        catch (Exception ex) when (ex is ApiValidationException or HttpRequestException)
+        {
+            CoverStatus = "封面下載失敗，可以手動選擇圖片";
+        }
+        finally
+        {
+            IsCoverBusy = false;
+        }
+    }
+
+    /// <summary>「選擇圖片」：開啟檔案對話框，選了就上傳。</summary>
+    [RelayCommand]
+    private async Task PickCoverAsync()
+    {
+        var path = _dialog.PickImageFile();
+        if (path is null)
+            return;
+
+        await UploadCoverAsync(await File.ReadAllBytesAsync(path));
+    }
+
     private bool CanDelete() => EditingId is not null;
+    private bool CanSave() => !IsCoverBusy;
 
     // 篩選或排序一改就重新查詢；搜尋字不在這裡，每打一個字都查太多次
     partial void OnOnlyFavoriteChanged(bool value) => LoadCommand.Execute(null);

@@ -11,7 +11,9 @@
                  ExtendsContentIntoTitleBar="True"
                  WindowBackdropType="Mica"
                  ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
-                 ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+                 ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                 PreviewKeyDown="Window_PreviewKeyDown"
+                 PreviewMouseLeftButtonDown="Window_PreviewMouseLeftButtonDown">
     <DockPanel>
         <ui:TitleBar DockPanel.Dock="Top" Title="收藏庫" />
         <DockPanel Margin="12,4,12,12">
@@ -77,7 +79,7 @@
             </Expander>
 
             <!-- 右側：編輯表單。儲存、刪除固定在底部，表單本身比視窗高時可捲動 -->
-            <DockPanel DockPanel.Dock="Right" Width="320" Margin="12,0,0,0">
+            <DockPanel x:Name="EditForm" DockPanel.Dock="Right" Width="320" Margin="12,0,0,0">
                 <StackPanel DockPanel.Dock="Bottom" Margin="0,8,0,0">
                     <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" TextWrapping="Wrap" Margin="0,0,0,8" />
                     <Grid>
@@ -107,6 +109,49 @@
                                 </ui:TextBox.InputBindings>
                             </ui:TextBox>
                         </DockPanel>
+                        <Separator Margin="0,12,0,0" />
+
+                        <!-- 封面：可拖放圖片到框裡；剪貼簿裡是圖片時按 Ctrl+V 貼上 -->
+                        <TextBlock Text="封面" Style="{StaticResource SectionHeader}" />
+                        <Border AllowDrop="True" DragOver="CoverArea_DragOver" Drop="CoverArea_Drop"
+                                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                                CornerRadius="6" Height="200">
+                            <Grid>
+                                <!-- 沒有指定 Row、Column，三個元素疊在同一格：預覽、提示、進度圈 -->
+                                <Image Source="{Binding CoverPreviewUrl}" Stretch="Uniform" Margin="4" />
+
+                                <!-- 沒有封面時才顯示提示 -->
+                                <TextBlock Text="拖放圖片到這裡&#10;或按 Ctrl+V 貼上" TextAlignment="Center"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding CoverPreviewUrl}" Value="{x:Null}">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+
+                                <ui:ProgressRing IsIndeterminate="True"
+                                                 Visibility="{Binding IsCoverBusy, Converter={StaticResource BoolToVisibility}}" />
+                            </Grid>
+                        </Border>
+                        <Grid Margin="0,6,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <ui:Button Grid.Column="0" Content="選擇圖片" Icon="{ui:SymbolIcon ImageAdd24}"
+                                       HorizontalAlignment="Stretch" Command="{Binding PickCoverCommand}" />
+                            <ui:Button Grid.Column="2" Content="移除" Icon="{ui:SymbolIcon Dismiss24}"
+                                       HorizontalAlignment="Stretch" Command="{Binding RemoveCoverCommand}" />
+                        </Grid>
+                        <TextBlock Text="{Binding CoverStatus}" Style="{StaticResource FieldLabel}" Margin="0,4,0,0" />
                         <Separator Margin="0,12,0,0" />
 
                         <TextBlock Text="名稱" Style="{StaticResource SectionHeader}" />

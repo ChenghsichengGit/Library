@@ -18,4 +18,5 @@ public record SaveWorkRequest(
     List<string> Tags,
     string? Series,
     List<WorkUrlItem> Urls,
-    List<WorkDlcItem> Dlcs);
+    List<WorkDlcItem> Dlcs,
+    string? CoverKey);

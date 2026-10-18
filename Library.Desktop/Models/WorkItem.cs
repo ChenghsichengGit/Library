@@ -24,7 +24,9 @@ public record WorkItem(
     int? SeriesId,
     string? Series,
     WorkUrlItem[] Urls,
-    WorkDlcItem[] Dlcs)
+    WorkDlcItem[] Dlcs,
+    string? CoverKey,
+    string? CoverUrl)
 {
     // 以下只給畫面顯示用
 
