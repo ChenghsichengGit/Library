@@ -16,5 +16,7 @@ public class DesignMainViewModel : MainViewModel
         Urls.Add(new UrlRow { Url = "https://store.steampowered.com/app/620", Language = "en", Purchased = true });
         Dlcs.Add(new DlcRow { Name = "特典音聲", PriceText = "330", Currency = "JPY" });
         Dlcs.Add(new DlcRow { Name = "設定資料集", Url = "https://…" });
+        Authors.SetNames(["Valve"]);
+        Tags.SetNames(["RPG", "2D", "像素風"]);
     }
 }

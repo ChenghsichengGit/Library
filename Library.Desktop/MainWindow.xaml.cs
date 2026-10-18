@@ -7,7 +7,8 @@ using Library.Desktop.ViewModels;
 using Wpf.Ui.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
-using Controls = System.Windows.Controls;
+using Library.Desktop.Models;
+using WpfControls = System.Windows.Controls;
 
 namespace Library.Desktop;
 
@@ -101,11 +102,11 @@ public partial class MainWindow : FluentWindow
     private bool IsInteractive(DependencyObject element) =>
         element == EditForm
         || element is ButtonBase // 按鈕、勾選框、下拉選單的開關、Expander 的標題
-            or TextBoxBase or Controls.PasswordBox
-            or Controls.ComboBox or Controls.DatePicker or Controls.Calendar
-            or Controls.ListBoxItem // 表格的資料列、下拉選單的選項
-            or Controls.GridViewColumnHeader // 表格的欄位標題（拖曳調整欄寬）
-            or ScrollBar or Thumb or Controls.Slider
+            or TextBoxBase or WpfControls.PasswordBox
+            or WpfControls.ComboBox or WpfControls.DatePicker or WpfControls.Calendar
+            or WpfControls.ListBoxItem // 表格的資料列、下拉選單的選項
+            or WpfControls.GridViewColumnHeader // 表格的欄位標題（拖曳調整欄寬）
+            or ScrollBar or Thumb or WpfControls.Slider
         || element is TitleBar; // 拖曳標題列移動視窗
 
     // 從點到的元素一路往上找，有任何一層符合 match 就回傳 true（像 Unity 的 GetComponentInParent）
@@ -121,6 +122,44 @@ public partial class MainWindow : FluentWindow
         }
 
         return false;
+    }
+
+    // 系列只有一個：選了建議就把名稱填進輸入框（不是加成標籤塊）
+    private void SeriesBox_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
+    {
+        if (args.SelectedItem is SeriesItem series)
+            _viewModel.SeriesInput = series.Name;
+    }
+
+    // 同 NameListInput：建議由 ViewModel 篩選，擋掉 WPF UI 內建的篩選（否則 ItemsSource 會被換成空清單）
+    private void SeriesBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+    {
+        args.Handled = true;
+    }
+
+    // 表單捲動時收起建議清單：清單是獨立的 Popup 視窗，不會跟著內容捲動
+    private void FormScroll_ScrollChanged(object sender, WpfControls.ScrollChangedEventArgs e)
+    {
+        // 加入標籤塊、換作品時內容高度會變，也會觸發；只有真的捲動了才處理
+        if (e.VerticalChange == 0)
+            return;
+
+        foreach (var box in FindDescendants<AutoSuggestBox>(EditForm))
+            box.IsSuggestionListOpen = false;
+    }
+
+    // 往下找出所有 T 型別的子元素（像 Unity 的 GetComponentsInChildren）
+    private static IEnumerable<T> FindDescendants<T>(DependencyObject parent) where T : DependencyObject
+    {
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is T match)
+                yield return match;
+
+            foreach (var nested in FindDescendants<T>(child))
+                yield return nested;
+        }
     }
 
     private static string? FindImageFile(IDataObject data) =>

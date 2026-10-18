@@ -86,6 +86,9 @@ public partial class MainViewModel : ObservableObject
     /// <summary>系列輸入框的選項。存檔可能建立新系列，所以儲存、刪除後重讀。</summary>
     public ObservableCollection<SeriesItem> SeriesOptions { get; } = [];
 
+    /// <summary>系列輸入框的建議：名稱包含輸入文字的，目前作者的系列排前面，最多 8 筆。</summary>
+    public ObservableCollection<SeriesItem> SeriesSuggestions { get; } = [];
+
     // 新增作品時預設第一個類型；清單是空的時給 0，存檔時由 API 回 400，而不是讓程式當掉
     private int DefaultWorkTypeId => WorkTypes.FirstOrDefault()?.Id ?? 0;
 
@@ -107,6 +110,9 @@ public partial class MainViewModel : ObservableObject
 
         if (SeriesOptions.Count == 0)
             await LoadSeriesAsync();
+
+        if (!Authors.HasOptions)
+            await LoadCreatorsAsync();
 
         StatusMessage = "載入中…";
         // 勾選標籤會觸發這裡重新查詢，順便更新標題的已選數量
@@ -199,6 +205,20 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
+    /// <summary>從 API 讀取作者、社團清單，給自動完成用。</summary>
+    private async Task LoadCreatorsAsync()
+    {
+        try
+        {
+            Authors.SetOptions(await _api.GetCreatorsAsync("author"));
+            Circles.SetOptions(await _api.GetCreatorsAsync("circle"));
+        }
+        catch (HttpRequestException)
+        {
+            StatusMessage = "連不上 API，請確認 Library.Api 有在執行";
+        }
+    }
+
     [ObservableProperty]
     private WorkItem? _selectedWork;
 
@@ -228,11 +248,11 @@ public partial class MainViewModel : ObservableObject
     // 類型下拉選單以 SelectedValue 繫結到這裡（比對選項的 Id）
     [ObservableProperty] private int _workTypeId;
 
-    // 作者、社團在表單裡是一行一個名字，送出時才用 SplitLines 切成清單
-    [ObservableProperty] private string _authorsInput = "";
-    [ObservableProperty] private string _circlesInput = "";
+    // 作者、社團、標籤：已加入的名字是標籤塊，輸入框有自動完成（打逗號或按 Enter 加入）
+    public NameListEditor Authors { get; } = new();
+    public NameListEditor Circles { get; } = new();
+    public NameListEditor Tags { get; } = new();
 
-    [ObservableProperty] private string _tagsInput = "";
     [ObservableProperty] private string _seriesInput = "";
 
     // 封面：key 存檔時送回（PUT 是整筆取代，沒送會被清空），網址給預覽
@@ -273,9 +293,9 @@ public partial class MainViewModel : ObservableObject
         Score = value.Score;
         Favorite = value.Favorite;
         WorkTypeId = value.WorkTypeId;
-        AuthorsInput = string.Join("\n", value.Authors);
-        CirclesInput = string.Join("\n", value.Circles);
-        TagsInput = string.Join("\n", value.Tags);
+        Authors.SetNames(value.Authors);
+        Circles.SetNames(value.Circles);
+        Tags.SetNames(value.Tags);
         SeriesInput = value.Series ?? "";
         CoverKey = value.CoverKey;
         CoverPreviewUrl = value.CoverUrl is { } coverUrl ? _api.ToAbsoluteUrl(coverUrl) : null;
@@ -310,9 +330,9 @@ public partial class MainViewModel : ObservableObject
         Score = 0;
         Favorite = false;
         WorkTypeId = DefaultWorkTypeId;
-        AuthorsInput = "";
-        CirclesInput = "";
-        TagsInput = "";
+        Authors.SetNames([]);
+        Circles.SetNames([]);
+        Tags.SetNames([]);
         StoreUrl = "";
         SeriesInput = "";
         ErrorMessage = "";
@@ -340,8 +360,8 @@ public partial class MainViewModel : ObservableObject
         var request = new SaveWorkRequest(
             TitleZh, TitleJa, TitleEn, Remark,
             ReleaseDate is { } date ? DateOnly.FromDateTime(date) : null,
-            Score, Favorite, SplitLines(AuthorsInput), SplitLines(CirclesInput),
-            WorkTypeId, SplitLines(TagsInput), SeriesInput, Urls.Select(r => r.ToItem()).ToList(),
+            Score, Favorite, Authors.GetNames(), Circles.GetNames(),
+            WorkTypeId, Tags.GetNames(), SeriesInput, Urls.Select(r => r.ToItem()).ToList(),
             Dlcs.Select(d => d.ToItem()).ToList(), CoverKey);
 
         try
@@ -362,6 +382,7 @@ public partial class MainViewModel : ObservableObject
             await LoadTagsAsync();
             await LoadSeriesAsync();
             await LoadAsync();
+            await LoadCreatorsAsync();
 
             // 選回剛儲存的那筆，表單更新成伺服器整理過的內容（例如去掉前後空白）
             SelectedWork = Works.FirstOrDefault(w => w.Id == savedId);
@@ -393,6 +414,7 @@ public partial class MainViewModel : ObservableObject
             await LoadTagsAsync();
             await LoadSeriesAsync();
             await LoadAsync();
+            await LoadCreatorsAsync();
         }
         catch (ApiValidationException ex)
         {
@@ -427,8 +449,10 @@ public partial class MainViewModel : ObservableObject
             TitleZh = KeepIfEmpty(info.TitleZh, TitleZh);
             TitleJa = KeepIfEmpty(info.TitleJa, TitleJa);
             TitleEn = KeepIfEmpty(info.TitleEn, TitleEn);
-            AuthorsInput = KeepIfEmpty(string.Join("\n", info.Authors), AuthorsInput);
-            CirclesInput = KeepIfEmpty(string.Join("\n", info.Circles), CirclesInput);
+            if (info.Authors.Length > 0)
+                Authors.SetNames(info.Authors);
+            if (info.Circles.Length > 0)
+                Circles.SetNames(info.Circles);
             ReleaseDate = info.ReleaseDate?.ToDateTime(TimeOnly.MinValue) ?? ReleaseDate;
             // 抓取用的網址就是這部作品的網址；清單裡已經有的不再加
             var url = StoreUrl.Trim();
@@ -486,6 +510,8 @@ public partial class MainViewModel : ObservableObject
             {
                 TagFilters.Add(new TagFilterOption(tag, selected.Contains(tag.Name), () => LoadCommand.Execute(null)));
             }
+
+            Tags.SetOptions(tags.Select(t => new NameOption(t.Name, t.WorkCount)));
         }
         catch (HttpRequestException)
         {
@@ -619,6 +645,26 @@ public partial class MainViewModel : ObservableObject
         await UploadCoverAsync(await File.ReadAllBytesAsync(path));
     }
 
+    // 每打一個字就重新篩選系列建議
+    partial void OnSeriesInputChanged(string value)
+    {
+        SeriesSuggestions.Clear();
+
+        var text = value.Trim();
+        if (text == "")
+            return;
+
+        var authors = Authors.GetNames();
+        var matches = SeriesOptions
+            .Where(s => s.Name.Contains(text, StringComparison.OrdinalIgnoreCase))
+            // true 排前面：系列的作者裡有表單上的任何一位作者
+            .OrderByDescending(s => s.Authors.Any(a => authors.Contains(a, StringComparer.OrdinalIgnoreCase)))
+            .Take(8);
+
+        foreach (var series in matches)
+            SeriesSuggestions.Add(series);
+    }
+
     private bool CanDelete() => EditingId is not null;
     private bool CanSave() => !IsCoverBusy;
 
@@ -630,11 +676,6 @@ public partial class MainViewModel : ObservableObject
     partial void OnSelectedSortChanged(SortOption value) => LoadCommand.Execute(null);
     partial void OnSortDescendingChanged(bool value) => LoadCommand.Execute(null);
     partial void OnTagMatchAnyChanged(bool value) => LoadCommand.Execute(null);
-
-    // TextBox 的換行是 \r\n，用 \n 切開後靠 TrimEntries 去掉 \r
-    private static List<string> SplitLines(string text) =>
-        text.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .ToList();
 
     private static string KeepIfEmpty(string fetched, string current) =>
         fetched == "" ? current : fetched;

@@ -185,6 +185,12 @@ public class WorksApiClient
         return (await response.Content.ReadFromJsonAsync<CoverUploadResult>())!;
     }
 
+    /// <summary>GET /api/creators?role=author：作者（或 circle 社團）與作品數，給自動完成用。</summary>
+    public async Task<List<NameOption>> GetCreatorsAsync(string role)
+    {
+        return await _http.GetFromJsonAsync<List<NameOption>>($"api/creators?role={role}") ?? [];
+    }
+
     /// <summary>API 回傳的相對網址（/covers/…）轉成完整網址，給 Image 顯示。</summary>
     public string ToAbsoluteUrl(string relativeUrl) => new Uri(_http.BaseAddress!, relativeUrl).ToString();
 

@@ -16,6 +16,7 @@ public static class DependencyInjection
         services.AddScoped<TagService>();
         services.AddScoped<SeriesService>();
         services.AddScoped<CoverService>();
+        services.AddScoped<CreatorService>();
 
         // 時鐘沒有狀態，整個程式共用一個
         services.AddSingleton(TimeProvider.System);

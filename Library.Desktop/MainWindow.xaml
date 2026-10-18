@@ -5,6 +5,8 @@
                  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                  xmlns:vm="clr-namespace:Library.Desktop.ViewModels"
                  xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 xmlns:controls="clr-namespace:Library.Desktop.Controls"
+                 xmlns:models="clr-namespace:Library.Desktop.Models"
                  mc:Ignorable="d"
                  d:DataContext="{d:DesignInstance Type=vm:DesignMainViewModel, IsDesignTimeCreatable=True}"
                  Title="收藏庫" Height="800" Width="1320"
@@ -95,7 +97,8 @@
                     </Grid>
                 </StackPanel>
 
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                              ScrollChanged="FormScroll_ScrollChanged">
                     <StackPanel Margin="0,0,12,0">
                         <!-- 從商店抓資料：只填表單，不存檔 -->
                         <TextBlock Text="從商店網址抓取" Style="{StaticResource FieldLabel}" />
@@ -163,13 +166,10 @@
                         <TextBox Text="{Binding TitleEn, UpdateSourceTrigger=PropertyChanged}" />
 
                         <TextBlock Text="創作者" Style="{StaticResource SectionHeader}" />
-                        <!-- 不加 TextWrapping：長名字自動折行會看起來像兩個名字 -->
-                        <TextBlock Text="作者／開發人員（一行一個）" Style="{StaticResource FieldLabel}" />
-                        <TextBox Text="{Binding AuthorsInput, UpdateSourceTrigger=PropertyChanged}"
-                                 Height="56" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Margin="0,0,0,8" />
-                        <TextBlock Text="社團／發行商（一行一個）" Style="{StaticResource FieldLabel}" />
-                        <TextBox Text="{Binding CirclesInput, UpdateSourceTrigger=PropertyChanged}"
-                                 Height="56" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" />
+                        <TextBlock Text="作者／開發人員" Style="{StaticResource FieldLabel}" />
+                        <controls:NameListInput DataContext="{Binding Authors}" Margin="0,0,0,8" />
+                        <TextBlock Text="社團／發行商" Style="{StaticResource FieldLabel}" />
+                        <controls:NameListInput DataContext="{Binding Circles}" />
 
                         <TextBlock Text="分類" Style="{StaticResource SectionHeader}" />
                         <Grid Margin="0,0,0,8">
@@ -188,14 +188,27 @@
                                 <DatePicker SelectedDate="{Binding ReleaseDate}" />
                             </StackPanel>
                         </Grid>
-                        <!-- 可直接輸入新系列（存檔時由 API 建立），也可以從清單選 -->
                         <TextBlock Text="系列" Style="{StaticResource FieldLabel}" />
-                        <ComboBox IsEditable="True" StaysOpenOnEdit="True"
-                                  ItemsSource="{Binding SeriesOptions}" DisplayMemberPath="Name"
-                                  Text="{Binding SeriesInput, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8" />
-                        <TextBlock Text="標籤（一行一個）" Style="{StaticResource FieldLabel}" />
-                        <TextBox Text="{Binding TagsInput, UpdateSourceTrigger=PropertyChanged}"
-                                 Height="56" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" />
+                        <!-- 可直接輸入新系列（存檔時由 API 建立），也可以從建議選；目前作者的系列排前面 -->
+                        <ui:AutoSuggestBox
+                            Text="{Binding SeriesInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            ItemsSource="{Binding SeriesSuggestions}"
+                            UpdateTextOnSelect="False"
+                            TextChanged="SeriesBox_TextChanged"
+                            SuggestionChosen="SeriesBox_SuggestionChosen"
+                            Margin="0,0,0,8">
+                            <ui:AutoSuggestBox.ItemTemplate>
+                                <DataTemplate DataType="{x:Type models:SeriesItem}">
+                                    <DockPanel>
+                                        <TextBlock DockPanel.Dock="Right" Text="{Binding Detail}" Margin="12,0,0,0"
+                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                        <TextBlock Text="{Binding Name}" />
+                                    </DockPanel>
+                                </DataTemplate>
+                            </ui:AutoSuggestBox.ItemTemplate>
+                        </ui:AutoSuggestBox>
+                        <TextBlock Text="標籤" Style="{StaticResource FieldLabel}" />
+                        <controls:NameListInput DataContext="{Binding Tags}" />
 
                         <TextBlock Text="評價" Style="{StaticResource SectionHeader}" />
                         <DockPanel>
