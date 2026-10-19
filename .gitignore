@@ -8,4 +8,4 @@ riderModule.iml
 .env
 # 本機的學習文件，不進版本控制
 docs/
-Library.Api/covers/
+src/Library.Api/covers/

@@ -46,8 +46,8 @@
 dotnet build
 dotnet test                                   # 整合測試需要 Docker Desktop 開著
 docker compose up -d                          # 啟動開發用的 SQL Server
-dotnet ef migrations add 名稱 --project Library.Infrastructure --startup-project Library.Api
-dotnet ef database update --project Library.Infrastructure --startup-project Library.Api
+dotnet ef migrations add 名稱 --project src/Library.Infrastructure --startup-project src/Library.Api
+dotnet ef database update --project src/Library.Infrastructure --startup-project src/Library.Api
 ```
 
 完整清單見 `docs/commands.md`。
