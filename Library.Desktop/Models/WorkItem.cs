@@ -9,7 +9,7 @@ public record WorkItem(
     string TitleZh,
     string TitleJa,
     string TitleEn,
-    string Remark,
+    string Description,
     int Score,
     bool Favorite,
     bool Purchased,

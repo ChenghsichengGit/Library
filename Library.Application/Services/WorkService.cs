@@ -48,7 +48,7 @@ public class WorkService
                 w.TitleZh.Contains(query.Q) ||
                 w.TitleJa.Contains(query.Q) ||
                 w.TitleEn.Contains(query.Q) ||
-                w.Remark.Contains(query.Q) ||
+                w.Description.Contains(query.Q) ||
                 w.Creators.Any(wc => wc.Creator.Name.Contains(query.Q)) ||
                 (w.Series != null &&
                  w.Series.Name.Contains(query.Q))
@@ -232,7 +232,7 @@ public class WorkService
         work.TitleZh = request.TitleZh?.Trim() ?? "";
         work.TitleJa = request.TitleJa?.Trim() ?? "";
         work.TitleEn = request.TitleEn?.Trim() ?? "";
-        work.Remark = request.Remark?.Trim() ?? "";
+        work.Description = request.Description?.Trim() ?? "";
         work.ReleaseDate = request.ReleaseDate;
         work.Score = request.Score ?? 0;
         work.Favorite = request.Favorite ?? false;

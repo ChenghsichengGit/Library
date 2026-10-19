@@ -23,8 +23,9 @@ public class Work
     [MaxLength(300)]
     public string TitleEn { get; set; } = "";
 
-    [MaxLength(300)]
-    public string Remark { get; set; } = "";
+    /// <summary>簡介：抓取時帶入商店的介紹（只在表單是空的時候），也可以自己寫。</summary>
+    [MaxLength(2000)]
+    public string Description { get; set; } = "";
 
     public DateOnly? ReleaseDate { get; set; }
 

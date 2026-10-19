@@ -7,7 +7,7 @@ public record SaveWorkRequest(
     string? TitleZh,
     string? TitleJa,
     string? TitleEn,
-    string? Remark,
+    string? Description,
     DateOnly? ReleaseDate,
     int Score,
     bool Favorite,

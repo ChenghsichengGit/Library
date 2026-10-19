@@ -39,7 +39,7 @@
             <!-- 搜尋、篩選、排序；視窗窄時自動換行 -->
             <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,8">
                 <ui:TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Width="280"
-                            PlaceholderText="搜尋名稱、作者、系列、備註" Icon="{ui:SymbolIcon Search24}"
+                            PlaceholderText="搜尋名稱、作者、系列、簡介" Icon="{ui:SymbolIcon Search24}"
                             Margin="0,0,6,4">
                     <ui:TextBox.InputBindings>
                         <KeyBinding Key="Enter" Command="{Binding LoadCommand}" />
@@ -361,9 +361,9 @@
                         </ItemsControl>
                         <ui:Button Content="新增 DLC" Icon="{ui:SymbolIcon Add24}" HorizontalAlignment="Stretch"
                                    Command="{Binding AddDlcCommand}" />
-                        <TextBlock Text="備註" Style="{StaticResource SectionHeader}" />
-                        <TextBox Text="{Binding Remark, UpdateSourceTrigger=PropertyChanged}"
-                                 Height="72" TextWrapping="Wrap" AcceptsReturn="True" />
+                        <TextBlock Text="簡介" Style="{StaticResource SectionHeader}" />
+                        <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}"
+                                 Height="120" TextWrapping="Wrap" AcceptsReturn="True" />
                     </StackPanel>
                 </ScrollViewer>
             </DockPanel>

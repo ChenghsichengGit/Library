@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -7,7 +8,7 @@ using Library.Application.Sources;
 namespace Library.Infrastructure.Sources;
 
 /// <summary>
-/// Steam 商店的來源：從網址取出 App ID，呼叫 Steam 的 appdetails API 抓回名稱、開發商、發行商、上架日。
+/// Steam 商店的來源：從網址取出 App ID，呼叫 Steam 的 appdetails API 抓回名稱、開發商、發行商、上架日、標籤、簡介。
 /// </summary>
 /// <remarks>
 /// HttpClient 從建構子傳入，測試時可以換成裝了假 HttpMessageHandler 的版本。連線失敗的例外交給呼叫端處理。
@@ -28,7 +29,8 @@ public partial class SteamSource : IStoreSource
         url.Host == "store.steampowered.com" && AppIdPattern().IsMatch(url.AbsolutePath);
 
     /// <summary>
-    /// 抓取作品資料，找不到這個遊戲回傳 null。名稱依語言各呼叫一次；開發商、發行商、日期取英文版（日期格式較固定）。
+    /// 抓取作品資料，找不到這個遊戲回傳 null。名稱依語言各呼叫一次；開發商、發行商、日期取英文版（日期格式較固定），
+    /// 標籤（genres）和簡介取繁中版（同原版）。
     /// </summary>
     public async Task<StoreWorkInfo?> FetchAsync(Uri url, CancellationToken cancellationToken = default)
     {
@@ -44,6 +46,9 @@ public partial class SteamSource : IStoreSource
         if (en is null)
             return null;
 
+        // 標籤和簡介用繁中版（genres 一定有翻譯，簡介沒翻譯時 Steam 會給英文）；繁中版抓不到才用英文版
+        var zh = zhTask.Result ?? en;
+
         return new StoreWorkInfo(
             TitleZh: Translated(zhTask.Result, en.Name),
             TitleJa: Translated(jaTask.Result, en.Name),
@@ -51,7 +56,9 @@ public partial class SteamSource : IStoreSource
             Authors: en.Developers ?? [],
             Circles: en.Publishers ?? [],
             ReleaseDate: ParseDate(en.ReleaseDate),
-            CoverImageUrl: en.HeaderImage);
+            CoverImageUrl: en.HeaderImage,
+            Tags: zh.Genres?.Select(g => g.Description).Distinct().ToArray() ?? [],
+            Description: WebUtility.HtmlDecode(zh.ShortDescription)?.Trim() ?? "");
     }
 
     // 沒有這個語言的名稱時 Steam 會回傳英文名稱，和英文一樣就當作沒有翻譯
@@ -98,7 +105,11 @@ public partial class SteamSource : IStoreSource
         string[]? Developers,
         string[]? Publishers,
         SteamReleaseDate? ReleaseDate,
-        string? HeaderImage);
+        string? HeaderImage,
+        SteamGenre[]? Genres,
+        string? ShortDescription);
+
+    private record SteamGenre(string Description);
 
     private record SteamReleaseDate(string Date);
 }

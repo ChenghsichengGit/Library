@@ -20,8 +20,8 @@ public class SaveWorkRequest : IValidatableObject
     [MaxLength(300)]
     public string? TitleEn { get; set; }
 
-    [MaxLength(300)]
-    public string? Remark { get; set; } = "";
+    [MaxLength(2000)]
+    public string? Description { get; set; } = "";
 
     public DateOnly? ReleaseDate { get; set; }
     public int? Score { get; set; }

@@ -38,13 +38,16 @@ public class SteamSourceTests
     private const string HeaderImage = "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/620/header.jpg";
 
     // developers 和 publishers 刻意不同，作者和社團拿反時才抓得到；headerImage 是 null 時不放這個欄位
-    private static string AppJson(string name, string date = "18 Apr, 2011", string? headerImage = HeaderImage) => $$"""
+    // extra 是額外的欄位（genres、short_description），沒給就是 Steam 沒有這兩個欄位的情況
+    private static string AppJson(string name, string date = "18 Apr, 2011", string? headerImage = HeaderImage,
+        string extra = "") => $$"""
         {
           "620": {
             "success": true,
             "data": {
               "name": "{{name}}",
               {{(headerImage is null ? "" : $"\"header_image\": \"{headerImage}\",")}}
+              {{extra}}
               "developers": ["Valve"],
               "publishers": ["Valve", "EA"],
               "release_date": { "coming_soon": false, "date": "{{date}}" }
@@ -140,5 +143,66 @@ public class SteamSourceTests
         // InlineData 只能放常數，日期用字串傳進來；用 result! 讓整個抓取失敗時測試也失敗
         var expectedDate = expected is null ? (DateOnly?)null : DateOnly.Parse(expected);
         Assert.Equal(expectedDate, result!.ReleaseDate);
+    }
+
+    private static string GenresAndDescription(string description, params string[] genres) =>
+        $$"""
+        "genres": [{{string.Join(",", genres.Select((g, i) => $$"""{ "id": "{{i}}", "description": "{{g}}" }"""))}}],
+        "short_description": "{{description}}",
+        """;
+
+    // 防：標籤、簡介取了英文版（原版用繁中）、重複的 genre 沒去掉
+    [Fact]
+    public async Task FetchAsync_TagsAndDescription_FromChineseVersion()
+    {
+        var source = CreateSource(language => language switch
+        {
+            "tchinese" => AppJson("傳送門 2", extra: GenresAndDescription("中文簡介", "動作", "獨立製作", "動作")),
+            _ => AppJson("Portal 2", extra: GenresAndDescription("English description", "Action", "Indie"))
+        });
+
+        var result = await source.FetchAsync(new Uri("https://store.steampowered.com/app/620"));
+
+        Assert.Equal(["動作", "獨立製作"], result!.Tags);
+        Assert.Equal("中文簡介", result.Description);
+    }
+
+    // 防：繁中版抓不到時整個抓取失敗，或標籤、簡介變成空的
+    [Fact]
+    public async Task FetchAsync_NoChineseVersion_FallsBackToEnglish()
+    {
+        var source = CreateSource(language => language == "tchinese"
+            ? """{ "620": { "success": false } }"""
+            : AppJson("Portal 2", extra: GenresAndDescription("English description", "Action")));
+
+        var result = await source.FetchAsync(new Uri("https://store.steampowered.com/app/620"));
+
+        Assert.Equal("", result!.TitleZh);
+        Assert.Equal(["Action"], result.Tags);
+        Assert.Equal("English description", result.Description);
+    }
+
+    // 防：表單顯示 &quot; 這種原始的 HTML 實體；前後空白沒去掉
+    [Fact]
+    public async Task FetchAsync_Description_DecodesHtmlEntities()
+    {
+        var source = CreateSource(_ => AppJson("Portal 2",
+            extra: GenresAndDescription(" Think with &quot;portals&quot; &amp; more ", "Action")));
+
+        var result = await source.FetchAsync(new Uri("https://store.steampowered.com/app/620"));
+
+        Assert.Equal("Think with \"portals\" & more", result!.Description);
+    }
+
+    // 防：沒有 genres、short_description 時丟出 NullReferenceException
+    [Fact]
+    public async Task FetchAsync_NoGenresOrDescription_ReturnsEmpty()
+    {
+        var source = CreateSource(_ => AppJson("Portal 2"));
+
+        var result = await source.FetchAsync(new Uri("https://store.steampowered.com/app/620"));
+
+        Assert.Empty(result!.Tags);
+        Assert.Equal("", result.Description);
     }
 }

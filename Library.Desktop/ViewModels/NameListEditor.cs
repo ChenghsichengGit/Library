@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Library.Desktop.Models;
@@ -36,6 +36,13 @@ public partial class NameListEditor : ObservableObject
         foreach (var name in names)
             Names.Add(name);
         InputText = "";
+    }
+
+    /// <summary>加入多個名字，已經有的（不分大小寫）不重複加。抓取帶回標籤時用。</summary>
+    public void AddNames(IEnumerable<string> names)
+    {
+        foreach (var name in names)
+            AddName(name);
     }
 
     /// <summary>

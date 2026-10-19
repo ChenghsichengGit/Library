@@ -288,7 +288,7 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private string _titleJa = "";
     [ObservableProperty] private string _titleEn = "";
 
-    [ObservableProperty] private string _remark = "";
+    [ObservableProperty] private string _description = "";
 
     // DatePicker 只認識 DateTime，送出時再轉成 DateOnly
     [ObservableProperty] private DateTime? _releaseDate;
@@ -344,7 +344,7 @@ public partial class MainViewModel : ObservableObject
         TitleZh = value.TitleZh;
         TitleJa = value.TitleJa;
         TitleEn = value.TitleEn;
-        Remark = value.Remark;
+        Description = value.Description;
         ReleaseDate = value.ReleaseDate?.ToDateTime(TimeOnly.MinValue);
         Score = value.Score;
         Favorite = value.Favorite;
@@ -381,7 +381,7 @@ public partial class MainViewModel : ObservableObject
         TitleZh = "";
         TitleJa = "";
         TitleEn = "";
-        Remark = "";
+        Description = "";
         ReleaseDate = null;
         Score = 0;
         Favorite = false;
@@ -414,7 +414,7 @@ public partial class MainViewModel : ObservableObject
     private async Task SaveAsync()
     {
         var request = new SaveWorkRequest(
-            TitleZh, TitleJa, TitleEn, Remark,
+            TitleZh, TitleJa, TitleEn, Description,
             ReleaseDate is { } date ? DateOnly.FromDateTime(date) : null,
             Score, Favorite, Authors.GetNames(), Circles.GetNames(),
             WorkTypeId, Tags.GetNames(), SeriesInput, Urls.Select(r => r.ToItem()).ToList(),
@@ -509,6 +509,12 @@ public partial class MainViewModel : ObservableObject
                 Authors.SetNames(info.Authors);
             if (info.Circles.Length > 0)
                 Circles.SetNames(info.Circles);
+
+            Tags.AddNames(info.Tags);
+            // 簡介只在表單是空的時候填，不蓋掉自己寫的
+            if (string.IsNullOrWhiteSpace(Description))
+                Description = info.Description;
+
             ReleaseDate = info.ReleaseDate?.ToDateTime(TimeOnly.MinValue) ?? ReleaseDate;
             // 抓取用的網址就是這部作品的網址；清單裡已經有的不再加
             var url = StoreUrl.Trim();

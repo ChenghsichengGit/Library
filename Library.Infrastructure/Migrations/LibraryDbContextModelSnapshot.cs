@@ -129,16 +129,16 @@ namespace Library.Infrastructure.Migrations
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
                     b.Property<bool>("Favorite")
                         .HasColumnType("bit");
 
                     b.Property<DateOnly?>("ReleaseDate")
                         .HasColumnType("date");
-
-                    b.Property<string>("Remark")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
 
                     b.Property<int>("Score")
                         .HasColumnType("int");

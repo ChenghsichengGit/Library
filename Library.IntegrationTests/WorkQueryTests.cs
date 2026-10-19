@@ -13,7 +13,7 @@ public class WorkQueryTests(SqlServerFixture fixture) : WorkServiceTestBase(fixt
     {
         await CreateWorksAsync(
             new SaveWorkRequest { TitleJa = "魔法少女", WorkTypeId = 1 },
-            new SaveWorkRequest { TitleEn = "Magic Girl", Remark = "魔法", WorkTypeId = 1 },
+            new SaveWorkRequest { TitleEn = "Magic Girl", Description = "魔法", WorkTypeId = 1 },
             new SaveWorkRequest { TitleZh = "其他作品", WorkTypeId = 1 });
 
         var result = await GetWorksAsync(new WorkQuery());
@@ -22,11 +22,11 @@ public class WorkQueryTests(SqlServerFixture fixture) : WorkServiceTestBase(fixt
     }
 
     [Fact]
-    public async Task GetWorksAsync_FiltersBySearchText_InAnyTitleOrRemark()
+    public async Task GetWorksAsync_FiltersBySearchText_InAnyTitleOrDescription()
     {
         await CreateWorksAsync(
             new SaveWorkRequest { TitleJa = "魔法少女", WorkTypeId = 1 },
-            new SaveWorkRequest { TitleEn = "Magic Girl", Remark = "魔法", WorkTypeId = 1 },
+            new SaveWorkRequest { TitleEn = "Magic Girl", Description = "魔法", WorkTypeId = 1 },
             new SaveWorkRequest { TitleZh = "其他作品", WorkTypeId = 1 });
 
         var result = await GetWorksAsync(new WorkQuery { Q = "魔法" });
@@ -66,7 +66,7 @@ public class WorkQueryTests(SqlServerFixture fixture) : WorkServiceTestBase(fixt
     {
         await CreateWorksAsync(
             new SaveWorkRequest { TitleJa = "魔法少女", Score = 0, WorkTypeId = 1 },
-            new SaveWorkRequest { TitleEn = "Magic Girl", Remark = "魔法", Score = 3, WorkTypeId = 1 },
+            new SaveWorkRequest { TitleEn = "Magic Girl", Description = "魔法", Score = 3, WorkTypeId = 1 },
             new SaveWorkRequest { TitleZh = "其他作品", Score = 5, WorkTypeId = 1 },
             new SaveWorkRequest { TitleZh = "其他作品2", Score = 6, WorkTypeId = 1 });
 
