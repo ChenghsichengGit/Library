@@ -20,7 +20,7 @@ public abstract class WorkServiceTestBase(SqlServerFixture fixture) : DatabaseTe
     // 所有 helper 共用，測試才查得到刪了哪些封面
     protected FakeCoverStorage Covers { get; } = new();
 
-    protected WorkService CreateService(LibraryDbContext db) => new(db, Covers, Time);
+    protected WorkService CreateService(LibraryDbContext db) => new(db, Covers, new CoverCleaner(db, Covers), Time);
 
     /// <summary>新增一筆作品，回傳 Id。</summary>
     protected async Task<int> CreateWorkAsync(SaveWorkRequest request)

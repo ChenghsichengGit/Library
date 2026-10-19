@@ -12,5 +12,11 @@ public class Series
     [MaxLength(300)]
     public string Name { get; set; } = "";
 
+    [MaxLength(2000)]
+    public string Note { get; set; } = "";
+
+    [MaxLength(100)]
+    public string CoverKey { get; set; } = "";
+
     public List<Work> Works { get; set; } = [];
 }

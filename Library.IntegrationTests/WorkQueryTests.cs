@@ -208,4 +208,50 @@ public class WorkQueryTests(SqlServerFixture fixture) : WorkServiceTestBase(fixt
 
         Assert.Equal(expected, result.Select(w => w.Title));
     }
+
+    // ZUN：紅魔郷、妖々夢當作者（東方），秘封當社團（沒系列）；東方二次是別人的東方作品；Portal 都不相干
+    private async Task<(int Zun, int Touhou)> SeedCreatorAndSeriesAsync()
+    {
+        await CreateWorksAsync(
+            new SaveWorkRequest { TitleJa = "紅魔郷", Authors = ["ZUN"], Series = "東方", WorkTypeId = 1 },
+            new SaveWorkRequest { TitleJa = "妖々夢", Authors = ["ZUN"], Series = "東方", WorkTypeId = 1 },
+            new SaveWorkRequest { TitleJa = "秘封", Circles = ["ZUN"], WorkTypeId = 1 },
+            new SaveWorkRequest { TitleJa = "東方二次", Authors = ["Other"], Series = "東方", WorkTypeId = 1 },
+            new SaveWorkRequest { TitleJa = "Portal", Authors = ["Valve"], Series = "Portal", WorkTypeId = 1 });
+
+        await using var db = CreateDbContext();
+        return (db.Creators.Single(c => c.Name == "ZUN").Id, db.Series.Single(s => s.Name == "東方").Id);
+    }
+
+    // 防：只比對作者角色（漏了當社團的秘封）
+    [Fact]
+    public async Task GetWorksAsync_FiltersByCreatorId_AnyRole()
+    {
+        var (zun, _) = await SeedCreatorAndSeriesAsync();
+
+        var result = await GetWorksAsync(new WorkQuery { CreatorId = zun });
+
+        Assert.Equal(["妖々夢", "秘封", "紅魔郷"], result.Select(w => w.Title).Order(StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public async Task GetWorksAsync_FiltersBySeriesId()
+    {
+        var (_, touhou) = await SeedCreatorAndSeriesAsync();
+
+        var result = await GetWorksAsync(new WorkQuery { SeriesId = touhou });
+
+        Assert.Equal(["妖々夢", "東方二次", "紅魔郷"], result.Select(w => w.Title).Order(StringComparer.Ordinal));
+    }
+
+    // 防：兩個條件只套用其中一個
+    [Fact]
+    public async Task GetWorksAsync_FiltersByCreatorAndSeries_Together()
+    {
+        var (zun, touhou) = await SeedCreatorAndSeriesAsync();
+
+        var result = await GetWorksAsync(new WorkQuery { CreatorId = zun, SeriesId = touhou });
+
+        Assert.Equal(["妖々夢", "紅魔郷"], result.Select(w => w.Title).Order(StringComparer.Ordinal));
+    }
 }

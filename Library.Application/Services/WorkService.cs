@@ -14,14 +14,16 @@ public class WorkService
 {
     private readonly ILibraryDbContext _db;
     private readonly ICoverStorage _cover;
+    private readonly CoverCleaner _cleaner;
 
     // 透過注入取得現在時間，測試才能換成固定的假時鐘
     private readonly TimeProvider _time;
 
-    public WorkService(ILibraryDbContext db, ICoverStorage cover, TimeProvider time)
+    public WorkService(ILibraryDbContext db, ICoverStorage cover, CoverCleaner cleaner, TimeProvider time)
     {
         _db = db;
         _cover = cover;
+        _cleaner = cleaner;
         _time = time;
     }
 
@@ -60,6 +62,12 @@ public class WorkService
 
         if (query.WorkTypeId != null)
             works = works.Where(w => w.WorkTypeId == query.WorkTypeId);
+
+        if (query.CreatorId != null)
+            works = works.Where(w => w.Creators.Any(wc => wc.CreatorId == query.CreatorId));
+
+        if (query.SeriesId != null)
+            works = works.Where(w => w.SeriesId == query.SeriesId);
 
         if (query.MinScore != null)
             works = works.Where(w => w.Score >= query.MinScore);
@@ -175,7 +183,7 @@ public class WorkService
         work.UpdatedAt = _time.GetUtcNow().UtcDateTime;
 
         await _db.SaveChangesAsync();
-        await DeleteCoverIfUnusedAsync(oldCoverKey, work.CoverKey);
+        await _cleaner.DeleteIfUnusedAsync(oldCoverKey, work.CoverKey);
         return true;
     }
 
@@ -330,19 +338,6 @@ public class WorkService
 
             return creator;
         }
-    }
-
-    /// <summary>舊封面換掉後，沒有其他作品在用就刪掉檔案。</summary>
-    private async Task DeleteCoverIfUnusedAsync(string oldKey, string newKey)
-    {
-        // 原本就沒封面，或封面沒變 → 不用刪
-        if (oldKey == "" || oldKey == newKey)
-            return;
-
-        // 已刪除的作品也要算進去：還原時還要用到它的封面
-        var used = await _db.Works.IgnoreQueryFilters().AnyAsync(w => w.CoverKey == oldKey);
-        if (!used)
-            await _cover.DeleteAsync(oldKey);
     }
 
     /// <summary>

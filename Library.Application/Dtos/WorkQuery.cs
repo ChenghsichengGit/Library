@@ -20,6 +20,11 @@ public class WorkQuery : IValidatableObject
 
     public int? WorkTypeId { get; set; }
 
+    /// <summary>作者或社團的 Id，不分角色。</summary>
+    public int? CreatorId { get; set; }
+
+    public int? SeriesId { get; set; }
+
     [Range(0, 6)]
     public int? MinScore { get; set; }
 

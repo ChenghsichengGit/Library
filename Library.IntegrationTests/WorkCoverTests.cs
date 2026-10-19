@@ -91,4 +91,40 @@ public class WorkCoverTests(SqlServerFixture fixture) : WorkServiceTestBase(fixt
 
         Assert.Empty(Covers.Deleted);
     }
+
+    // 防：只檢查作品，把作者／社團挑來當封面的檔案刪掉
+    [Fact]
+    public async Task UpdateAsync_CoverUsedByCreator_KeepsFile()
+    {
+        var request = Request(OldKey);
+        request.Authors = ["ZUN"];
+        var id = await CreateWorkAsync(request);
+        await using (var db = CreateDbContext())
+        {
+            db.Creators.Single(c => c.Name == "ZUN").CoverKey = OldKey;
+            await db.SaveChangesAsync();
+        }
+
+        await UpdateWorkAsync(id, Request(NewKey));
+
+        Assert.Empty(Covers.Deleted);
+    }
+
+    // 防：只檢查作品，把系列挑來當封面的檔案刪掉
+    [Fact]
+    public async Task UpdateAsync_CoverUsedBySeries_KeepsFile()
+    {
+        var request = Request(OldKey);
+        request.Series = "東方Project";
+        var id = await CreateWorkAsync(request);
+        await using (var db = CreateDbContext())
+        {
+            db.Series.Single(s => s.Name == "東方Project").CoverKey = OldKey;
+            await db.SaveChangesAsync();
+        }
+
+        await UpdateWorkAsync(id, Request(NewKey));
+
+        Assert.Empty(Covers.Deleted);
+    }
 }

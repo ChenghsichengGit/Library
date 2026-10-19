@@ -7,6 +7,7 @@ namespace Library.Domain.Entities;
 /// </summary>
 /// <remarks>
 /// 名字唯一（不分大小寫），新增作品時依名字沿用或建立。沒有作品的創作者不會自動刪除。
+/// 作者和社團都可以填網址、備註、封面；沒填是空字串。
 /// </remarks>
 public class Creator
 {
@@ -14,6 +15,15 @@ public class Creator
 
     [MaxLength(300)]
     public string Name { get; set; } = "";
+
+    [MaxLength(2000)]
+    public string Url { get; set; } = "";
+
+    [MaxLength(2000)]
+    public string Note { get; set; } = "";
+
+    [MaxLength(100)]
+    public string CoverKey { get; set; } = "";
 
     public List<WorkCreator> Works { get; set; } = [];
 }

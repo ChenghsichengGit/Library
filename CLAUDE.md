@@ -59,9 +59,9 @@ dotnet ef database update --project Library.Infrastructure --startup-project Lib
 目標是和原本的 Node 版（`F:\tool\media-library`）功能一樣，規劃前先對照它的 `schema.sql`、`server.js`、`lib/scrapers.js`、`public/app.js`，不可削減功能。剩下的步驟：
 
 1. ~~作品欄位補齊：類型、標籤、系列、修改時間；WPF 依類型篩選~~（已完成）
-2. UI 美化與效能：（已完成：預設 SplitQuery、作品表格改用 ListView，換排序約 500 → 200 ms；導入 WPF UI（深色主題、`FluentWindow`、表格用 `ui:ListView`／`ui:GridView`），重新量測仍約 200 ms，剩下的慢原因不明、先不處理，見 `docs/wpf-mvvm.md`；主視窗版面整理：WPF UI 按鈕與圖示、篩選列 `WrapPanel`、標籤篩選可收合並顯示已選數量、表單分區且儲存／刪除固定在底部、表格最愛／已購買只顯示 ♥／✓；`d:DataContext`）；剩下：類型管理視窗的版面（AutoSuggestBox 移到第 15 步）
+2. ~~UI 美化與效能~~（已完成：預設 SplitQuery、作品表格改用 ListView，換排序約 500 → 200 ms；導入 WPF UI（深色主題、`FluentWindow`、表格用 `ui:ListView`／`ui:GridView`），重新量測仍約 200 ms，剩下的慢原因不明、先不處理，見 `docs/wpf-mvvm.md`；主視窗版面整理：WPF UI 按鈕與圖示、篩選列 `WrapPanel`、標籤篩選可收合並顯示已選數量、表單分區且儲存／刪除固定在底部、表格最愛／已購買只顯示 ♥／✓；`d:DataContext`；類型管理視窗版面，共用樣式移到 `App.xaml`）
 3. ~~多網址與 DLC／追加內容~~（已完成：`WorkUrls` 一對多 + Cascade、`UrlNormalizer` 正規化後去重複、存檔整批取代、已購買改由網址推導（刪除 `Works.Purchased`）、`PATCH /api/works/{id}/urls/{position}/purchased`、enum 在 JSON 用名稱、WPF 表單的網址清單（`UrlRow`、`RelativeSource`）；DLC：`WorkDlcs`，名稱必填、不去重複、不影響已購買，「還有 DLC 沒買」篩選；預覽用 `DesignMainViewModel`）
-4. 封面：上傳、從商店抓；作者、社團、系列也有封面
+4. ~~封面：上傳、從商店抓~~（已完成：`ICoverStorage`／`LocalCoverStorage` 存在本機、`/covers` 靜態檔案；`POST /api/covers` 上傳、`POST /api/covers/download` 從網址下載（只允許 http/https，內網 SSRF 部署前處理）；用檔頭判斷格式、10MB 上限；換封面時刪掉沒人用的舊檔；WPF 選檔、拖放、Ctrl+V、抓取時帶入，上傳前縮到 900px；作者、社團、系列的封面移到第 5 步）
 5. 作者、社團、系列的管理：網址、封面、別名、備註、改名；依作者篩選與系列下拉篩選（`?seriesId=`），選了作者時系列只列他的；系列自動完成時同作者的排前面
 6. 外部來源補齊：DLsite、DMM／FANZA、通用 og 標籤；抓取時也帶回標籤（Steam genres、DLsite ジャンル）
 7. 重複偵測：新增時檢查（完全相同擋下、相似提醒）、全庫掃描
@@ -72,4 +72,4 @@ dotnet ef database update --project Library.Infrastructure --startup-project Lib
 12. 登入（同時處理 `UseHttpsRedirection` 在 http 設定檔下的警告）
 13. 手機版：網頁前端，共用同一個後端 API（原版是 PWA：HTML／CSS／JavaScript + manifest + service worker，可加到手機主畫面）；技術開始前再決定（Blazor WebAssembly、純 HTML + JS、React 等），需要先有登入
 14. README（Swagger 的 enum 顯示成名稱已在第 3 步完成）
-15. 作者、社團、系列、標籤的輸入框改用 AutoSuggestBox（原版的 `attachAutocomplete`：列出包含輸入文字的選項、打字時自動展開）
+15. ~~作者、社團、系列、標籤的輸入框改用 AutoSuggestBox~~（已完成：`GET /api/creators?role=`；作者、社團、標籤共用 `NameListEditor`／`NameListInput`，已加入的名字顯示成標籤塊；系列用 AutoSuggestBox，目前作者的系列排在前面；捲動表單時收起建議清單）
