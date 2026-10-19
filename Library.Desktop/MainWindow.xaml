@@ -30,6 +30,9 @@
                                Command="{Binding LoadCommand}" />
                     <ui:Button Content="管理類型" Icon="{ui:SymbolIcon Settings24}" Margin="8,0,0,0"
                                Command="{Binding ManageWorkTypesCommand}" />
+                    <ui:Button Content="管理作者／系列" Icon="{ui:SymbolIcon People24}" Margin="8,0,0,0"
+                               Command="{Binding ManageCreatorsCommand}" />
+
                 </StackPanel>
             </DockPanel>
 
@@ -46,6 +49,10 @@
 
                 <ComboBox ItemsSource="{Binding WorkTypeFilters}" DisplayMemberPath="Name" SelectedValuePath="Id"
                           SelectedValue="{Binding FilterWorkTypeId}" Width="130" Margin="0,0,8,4" />
+                <ComboBox ItemsSource="{Binding CreatorFilters}" DisplayMemberPath="Name" SelectedValuePath="Id"
+                          SelectedValue="{Binding FilterCreatorId}" Width="160" Margin="0,0,8,4" />
+                <ComboBox ItemsSource="{Binding SeriesFilters}" DisplayMemberPath="Name" SelectedValuePath="Id"
+                          SelectedValue="{Binding FilterSeriesId}" Width="160" Margin="0,0,8,4" />
                 <ComboBox ItemsSource="{Binding ScoreFilters}" SelectedItem="{Binding SelectedScoreFilter}"
                           DisplayMemberPath="Label" Width="130" Margin="0,0,8,4" />
                 <CheckBox Content="只看最愛" IsChecked="{Binding OnlyFavorite}" Margin="0,0,16,4" />
@@ -56,6 +63,48 @@
                           DisplayMemberPath="Label" Width="130" Margin="0,0,8,4" />
                 <CheckBox Content="降冪" IsChecked="{Binding SortDescending}" Margin="0,0,0,4" />
             </WrapPanel>
+
+            <!-- 篩選某位作者／社團時顯示：名稱、網址、備註、取消篩選 -->
+            <Border DockPanel.Dock="Top" Margin="0,0,0,8" Padding="12,4" CornerRadius="4"
+                    Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Style.Triggers>
+                            <!-- 沒有篩選（FilterCreator 是 null）時整條隱藏 -->
+                            <DataTrigger Binding="{Binding FilterCreator}" Value="{x:Null}">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+
+                <DockPanel>
+                    <ui:Button DockPanel.Dock="Right" Icon="{ui:SymbolIcon Dismiss24}" Appearance="Transparent"
+                               ToolTip="取消篩選" Command="{Binding ClearCreatorFilterCommand}" />
+
+                    <TextBlock Text="{Binding FilterCreator.Name}" FontWeight="SemiBold" VerticalAlignment="Center" />
+
+                    <ui:Button Content="網站" Icon="{ui:SymbolIcon Open24}" Appearance="Transparent" Margin="8,0,0,0"
+                               Command="{Binding OpenCreatorUrlCommand}">
+                        <ui:Button.Style>
+                            <Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
+                                <Style.Triggers>
+                                    <!-- 沒填網址就不顯示 -->
+                                    <DataTrigger Binding="{Binding FilterCreator.Url}" Value="">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ui:Button.Style>
+                    </ui:Button>
+                    <!-- 開啟管理視窗並選好這個人 -->
+                    <ui:Button Content="編輯" Icon="{ui:SymbolIcon Edit24}" Appearance="Transparent" Margin="4,0,0,0"
+                               Command="{Binding ManageCreatorsCommand}"
+                               CommandParameter="{Binding FilterCreatorId}" />
+                    <TextBlock Text="{Binding FilterCreator.Note}" Margin="12,0,0,0" VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis" Opacity="0.7" />
+                </DockPanel>
+            </Border>
 
             <!-- 標籤篩選：預設收合，標題顯示已選幾個；標籤多時限制高度、內部捲動，不把表格往下擠 -->
             <Expander DockPanel.Dock="Top" Header="{Binding TagFilterHeader}" Margin="0,0,0,8">

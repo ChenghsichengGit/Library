@@ -1,0 +1,122 @@
+﻿<ui:FluentWindow x:Class="Library.Desktop.CreatorSeriesWindow"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                 xmlns:vm="clr-namespace:Library.Desktop.ViewModels"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 mc:Ignorable="d"
+                 d:DataContext="{d:DesignInstance Type=vm:CreatorSeriesViewModel}"
+                 ExtendsContentIntoTitleBar="True"
+                 WindowBackdropType="Mica"
+                 ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
+                 ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                 Title="管理作者／系列" Height="640" Width="820">
+    <DockPanel>
+        <ui:TitleBar DockPanel.Dock="Top" Title="管理作者／系列" />
+        <Grid Margin="12,4,12,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="260" />
+                <ColumnDefinition Width="16" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- 左：切換作者／系列，下面是清單 -->
+            <DockPanel Grid.Column="0">
+                <ComboBox DockPanel.Dock="Top" ItemsSource="{Binding Kinds}" SelectedIndex="{Binding KindIndex}"
+                          Margin="0,0,0,8" />
+                <ListBox ItemsSource="{Binding Entries}" SelectedItem="{Binding SelectedEntry}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding WorkCount}" Opacity="0.6" />
+                                <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                            </DockPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+
+            <!-- 右：表單，儲存固定在底部 -->
+            <DockPanel Grid.Column="2">
+                <StackPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
+                    <ui:Button Content="儲存" Icon="{ui:SymbolIcon Save24}" Appearance="Primary"
+                               HorizontalAlignment="Stretch" Command="{Binding SaveCommand}" />
+                    <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" TextWrapping="Wrap" Margin="0,8,0,0" />
+                </StackPanel>
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="名稱" Style="{StaticResource FieldLabel}" />
+                        <ui:TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8" />
+
+                        <!-- 系列沒有網址 -->
+                        <StackPanel Margin="0,0,0,8">
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsSeries}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+                            <TextBlock Text="網址" Style="{StaticResource FieldLabel}" />
+                            <ui:TextBox Text="{Binding Url, UpdateSourceTrigger=PropertyChanged}"
+                                        PlaceholderText="https://…（填了之後，工具列的資訊列可以直接開啟）" />
+                        </StackPanel>
+
+                        <TextBlock Text="備註" Style="{StaticResource FieldLabel}" />
+                        <ui:TextBox Text="{Binding Note, UpdateSourceTrigger=PropertyChanged}"
+                                    AcceptsReturn="True" TextWrapping="Wrap" Height="80" Margin="0,0,0,8" />
+
+                        <TextBlock Text="封面" Style="{StaticResource FieldLabel}" />
+                        <StackPanel Margin="0,0,0,8">
+                            <Border Height="200" CornerRadius="6"
+                                    Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
+                                <!-- 和作品表單一樣：預覽和進度圈疊在同一格 -->
+                                <Grid>
+                                    <Image Source="{Binding CoverPreviewUrl}" Stretch="Uniform" Margin="4" />
+                                    <ui:ProgressRing IsIndeterminate="True"
+                                                     Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}" />
+                                </Grid>
+                            </Border>
+                            <Grid Margin="0,6,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="8" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <ui:Button Grid.Column="0" Content="上傳圖片" Icon="{ui:SymbolIcon ImageAdd24}"
+                                           HorizontalAlignment="Stretch" Command="{Binding UploadCoverCommand}" />
+                                <ui:Button Grid.Column="2" Content="清除" Icon="{ui:SymbolIcon Dismiss24}"
+                                           HorizontalAlignment="Stretch" Command="{Binding ClearCoverCommand}" />
+                            </Grid>
+                            <TextBlock Text="{Binding CoverStatus}" Style="{StaticResource FieldLabel}" Margin="0,4,0,0" />
+                        </StackPanel>
+
+                        <TextBlock Text="從作品挑一張" Style="{StaticResource FieldLabel}" />
+                        <ItemsControl ItemsSource="{Binding CoverChoices}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <!-- 按鈕在 ItemTemplate 裡，DataContext 是 CoverChoice，要往上找 ItemsControl 拿 ViewModel 的命令 -->
+                                    <Button Width="100" Height="140" Margin="0,0,6,6" Padding="2"
+                                            ToolTip="{Binding Title}"
+                                            Command="{Binding DataContext.PickCoverCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding}">
+                                        <Image Source="{Binding CoverUrl}" Stretch="Uniform" />
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </ScrollViewer>
+            </DockPanel>
+        </Grid>
+    </DockPanel>
+</ui:FluentWindow>

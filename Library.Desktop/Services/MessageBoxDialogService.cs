@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Windows;
 using Library.Desktop.ViewModels;
 
@@ -33,5 +34,19 @@ public class MessageBoxDialogService : IDialogService
         };
         // ShowDialog 回傳 bool?：按「開啟」是 true，取消或關閉是 false
         return dialog.ShowDialog() == true ? dialog.FileName : null;
+    }
+
+    public void OpenInBrowser(Uri url) =>
+        // UseShellExecute：交給 Windows 用預設程式開啟（.NET Core 起預設是 false）
+        Process.Start(new ProcessStartInfo(url.AbsoluteUri) { UseShellExecute = true });
+
+    public void ShowCreatorSeriesManager(int? selectCreatorId)
+    {
+        var window = new CreatorSeriesWindow
+        {
+            DataContext = new CreatorSeriesViewModel(new WorksApiClient(), this, selectCreatorId),
+            Owner = Application.Current.MainWindow
+        };
+        window.ShowDialog();
     }
 }

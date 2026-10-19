@@ -63,6 +63,7 @@ public partial class MainViewModel : ObservableObject
 
     // 0 = 全部類型，送 API 時換成 null
     [ObservableProperty] private int _filterWorkTypeId;
+
     // 只看還有 DLC 沒買的作品
     [ObservableProperty] private bool _dlcUnbought;
     [ObservableProperty] private bool _tagMatchAny;
@@ -82,6 +83,19 @@ public partial class MainViewModel : ObservableObject
 
     /// <summary>工具列的類型篩選選項：第一項「全部類型」（Id 0），其餘同 WorkTypes。</summary>
     public ObservableCollection<WorkTypeItem> WorkTypeFilters { get; } = [];
+
+    // 工具列的作者／社團篩選：作者和社團合併成一個清單，Id 0 是「全部作者／社團」
+    public ObservableCollection<CreatorItem> CreatorFilters { get; } = [];
+
+    [ObservableProperty] private int _filterCreatorId;
+
+    // 系列篩選：選了作者時只列他參與的；和表單自動完成用的 SeriesOptions 分開
+    public ObservableCollection<SeriesItem> SeriesFilters { get; } = [];
+
+    [ObservableProperty] private int _filterSeriesId;
+
+    /// <summary>篩選中的作者／社團，給資訊列顯示；沒有篩選時是 null。</summary>
+    public CreatorItem? FilterCreator => CreatorFilters.FirstOrDefault(c => c.Id == FilterCreatorId && c.Id != 0);
 
     /// <summary>系列輸入框的選項。存檔可能建立新系列，所以儲存、刪除後重讀。</summary>
     public ObservableCollection<SeriesItem> SeriesOptions { get; } = [];
@@ -127,6 +141,8 @@ public partial class MainViewModel : ObservableObject
                 MinScore: SelectedScoreFilter.Min,
                 MaxScore: SelectedScoreFilter.Max,
                 WorkTypeId: FilterWorkTypeId == 0 ? null : FilterWorkTypeId,
+                CreatorId: FilterCreatorId == 0 ? null : FilterCreatorId,
+                SeriesId: FilterSeriesId == 0 ? null : FilterSeriesId,
                 DlcUnbought: DlcUnbought,
                 Tags: TagFilters
                     .Where(t => t.IsSelected)
@@ -198,6 +214,8 @@ public partial class MainViewModel : ObservableObject
             {
                 SeriesOptions.Add(item);
             }
+
+            await LoadSeriesFiltersAsync();
         }
         catch (HttpRequestException)
         {
@@ -210,8 +228,46 @@ public partial class MainViewModel : ObservableObject
     {
         try
         {
-            Authors.SetOptions(await _api.GetCreatorsAsync("author"));
-            Circles.SetOptions(await _api.GetCreatorsAsync("circle"));
+            var authors = await _api.GetCreatorsAsync("author");
+            var circles = await _api.GetCreatorsAsync("circle");
+            Authors.SetOptions(authors.Select(a => new NameOption(a.Name, a.WorkCount)));
+            Circles.SetOptions(circles.Select(c => new NameOption(c.Name, c.WorkCount)));
+
+            CreatorFilters.Clear();
+            CreatorFilters.Add(new CreatorItem(0, "全部作者／社團", 0, "", "", null, null));
+            // 同一個人可能同時是作者和社團，依 Id 去重複
+            foreach (var creator in authors.Concat(circles).DistinctBy(c => c.Id).OrderBy(c => c.Name))
+                CreatorFilters.Add(creator);
+
+            // 和類型篩選一樣：篩選中的人不見了就回到全部，否則通知下拉選單選回來
+            if (FilterCreatorId != 0 && CreatorFilters.All(c => c.Id != FilterCreatorId))
+                FilterCreatorId = 0;
+            else
+                OnPropertyChanged(nameof(FilterCreatorId));
+            // 管理視窗改了網址、備註後，資訊列要更新
+            OnPropertyChanged(nameof(FilterCreator));
+        }
+        catch (HttpRequestException)
+        {
+            StatusMessage = "連不上 API，請確認 Library.Api 有在執行";
+        }
+    }
+
+    /// <summary>讀取系列篩選的選項；選了作者時只列他參與的。</summary>
+    private async Task LoadSeriesFiltersAsync()
+    {
+        try
+        {
+            var series = await _api.GetSeriesAsync(FilterCreatorId == 0 ? null : FilterCreatorId);
+            SeriesFilters.Clear();
+            SeriesFilters.Add(new SeriesItem(0, "全部系列", 0, []));
+            foreach (var item in series)
+                SeriesFilters.Add(item);
+
+            if (FilterSeriesId != 0 && series.All(s => s.Id != FilterSeriesId))
+                FilterSeriesId = 0;
+            else
+                OnPropertyChanged(nameof(FilterSeriesId));
         }
         catch (HttpRequestException)
         {
@@ -492,6 +548,23 @@ public partial class MainViewModel : ObservableObject
     }
 
     /// <summary>
+    /// 「管理作者／系列」與資訊列的「編輯」：開啟管理視窗，關閉後重讀（名稱、網址、封面可能改了）。
+    /// </summary>
+    [RelayCommand]
+    private async Task ManageCreatorsAsync(int? selectCreatorId)
+    {
+        _dialog.ShowCreatorSeriesManager(selectCreatorId);
+
+        await LoadCreatorsAsync();
+        await LoadSeriesAsync();
+        await LoadAsync();
+
+        // 編輯中的作品重新帶入表單：作者、系列的名字可能改了
+        if (EditingId is { } id)
+            SelectedWork = Works.FirstOrDefault(w => w.Id == id);
+    }
+
+    /// <summary>
     /// 讀取標籤篩選清單，依名稱保留原本的勾選。啟動時及作品儲存、刪除後執行（作品數會變）。
     /// </summary>
     private async Task LoadTagsAsync()
@@ -676,6 +749,37 @@ public partial class MainViewModel : ObservableObject
     partial void OnSelectedSortChanged(SortOption value) => LoadCommand.Execute(null);
     partial void OnSortDescendingChanged(bool value) => LoadCommand.Execute(null);
     partial void OnTagMatchAnyChanged(bool value) => LoadCommand.Execute(null);
+    partial void OnFilterSeriesIdChanged(int value) => LoadCommand.Execute(null);
+
+    // 換作者：資訊列更新、系列選單改成他的系列，再重新查詢
+    partial void OnFilterCreatorIdChanged(int value)
+    {
+        OnPropertyChanged(nameof(FilterCreator));
+        ApplyCreatorFilterCommand.Execute(null);
+    }
+
+    [RelayCommand]
+    private async Task ApplyCreatorFilterAsync()
+    {
+        await LoadSeriesFiltersAsync();
+        LoadCommand.Execute(null);
+    }
+
+    /// <summary>資訊列的「×」：取消作者／社團篩選。</summary>
+    [RelayCommand]
+    private void ClearCreatorFilter() => FilterCreatorId = 0;
+
+    /// <summary>資訊列的「網站」：開啟篩選中作者／社團的網址，只接受 http、https。</summary>
+    [RelayCommand]
+    private void OpenCreatorUrl()
+    {
+        if (FilterCreator == null
+            || !Uri.TryCreate(FilterCreator.Url, UriKind.Absolute, out var uri)
+            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+            return;
+
+        _dialog.OpenInBrowser(uri);
+    }
 
     private static string KeepIfEmpty(string fetched, string current) =>
         fetched == "" ? current : fetched;

@@ -34,6 +34,10 @@ public class WorksApiClient
             parts.Add($"maxScore={max}");
         if (query.WorkTypeId is { } workTypeId)
             parts.Add($"workTypeId={workTypeId}");
+        if (query.CreatorId is { } creatorId)
+            parts.Add($"creatorId={creatorId}");
+        if (query.SeriesId is { } seriesId)
+            parts.Add($"seriesId={seriesId}");
         if (query.DlcUnbought)
             parts.Add("dlcUnbought=True");
 
@@ -146,9 +150,10 @@ public class WorksApiClient
     }
 
     /// <summary>GET /api/series：有作品的系列，給系列輸入框當選項。</summary>
-    public async Task<List<SeriesItem>> GetSeriesAsync()
+    public async Task<List<SeriesItem>> GetSeriesAsync(int? creatorId = null)
     {
-        return await _http.GetFromJsonAsync<List<SeriesItem>>("api/series") ?? [];
+        var url = creatorId is { } id ? $"api/series?creatorId={id}" : "api/series";
+        return await _http.GetFromJsonAsync<List<SeriesItem>>(url) ?? [];
     }
 
     /// <summary>POST /api/covers：上傳圖片（multipart，欄位名稱 file）。不是圖片、太大時丟 ApiValidationException。</summary>
@@ -186,9 +191,38 @@ public class WorksApiClient
     }
 
     /// <summary>GET /api/creators?role=author：作者（或 circle 社團）與作品數，給自動完成用。</summary>
-    public async Task<List<NameOption>> GetCreatorsAsync(string role)
+    public async Task<List<CreatorItem>> GetCreatorsAsync(string role)
     {
-        return await _http.GetFromJsonAsync<List<NameOption>>($"api/creators?role={role}") ?? [];
+        return await _http.GetFromJsonAsync<List<CreatorItem>>($"api/creators?role={role}") ?? [];
+    }
+
+    /// <summary>PUT /api/creators/{id}：修改作者／社團。撞名、格式錯誤丟 ApiValidationException。</summary>
+    public async Task UpdateCreatorAsync(int id, string name, string url, string note, string? coverKey)
+    {
+        // 空的網址送 null：後端的 [Url] 不接受空字串
+        var response = await _http.PutAsJsonAsync($"api/creators/{id}",
+            new { Name = name, Url = url == "" ? null : url, Note = note, CoverKey = coverKey });
+        await EnsureSuccessAsync(response);
+    }
+
+    /// <summary>PUT /api/series/{id}：修改系列。</summary>
+    public async Task UpdateSeriesAsync(int id, string name, string note, string? coverKey)
+    {
+        var response =
+            await _http.PutAsJsonAsync($"api/series/{id}", new { Name = name, Note = note, CoverKey = coverKey });
+        await EnsureSuccessAsync(response);
+    }
+
+    /// <summary>GET /api/creators/{id}/cover-choices：這個人參與的作品的封面。</summary>
+    public async Task<List<CoverChoice>> GetCreatorCoverChoicesAsync(int id)
+    {
+        return await _http.GetFromJsonAsync<List<CoverChoice>>($"api/creators/{id}/cover-choices") ?? [];
+    }
+
+    /// <summary>GET /api/series/{id}/cover-choices：系列裡作品的封面。</summary>
+    public async Task<List<CoverChoice>> GetSeriesCoverChoicesAsync(int id)
+    {
+        return await _http.GetFromJsonAsync<List<CoverChoice>>($"api/series/{id}/cover-choices") ?? [];
     }
 
     /// <summary>API 回傳的相對網址（/covers/…）轉成完整網址，給 Image 顯示。</summary>
