@@ -17,10 +17,12 @@ namespace Library.Api.Controllers;
 public class WorksController : ControllerBase
 {
     private readonly WorkService _works;
+    private readonly DuplicateService _duplicates;
 
-    public WorksController(WorkService works)
+    public WorksController(WorkService works, DuplicateService duplicates)
     {
         _works = works;
+        _duplicates = duplicates;
     }
 
     /// <summary>GET /api/works?q=…&amp;workTypeId=…&amp;sort=title&amp;desc=true：作品清單。條件不合法回 400。</summary>
@@ -87,5 +89,19 @@ public class WorksController : ControllerBase
     {
         var success = await _works.SetUrlPurchasedAsync(id, position, request.Purchased!.Value);
         return success ? NoContent() : NotFound();
+    }
+
+    /// <summary>POST /api/works/check：表單的內容和哪些既有作品重複。只檢查，不存檔。</summary>
+    [HttpPost("check")]
+    public async Task<DuplicateCheckDto> Check(CheckDuplicateRequest request)
+    {
+        return await _duplicates.CheckAsync(request);
+    }
+
+    /// <summary>GET /api/works/duplicates：全庫掃描，回傳互相重複的作品分組。</summary>
+    [HttpGet("duplicates")]
+    public async Task<List<DuplicateGroupDto>> Duplicates()
+    {
+        return await _duplicates.ScanAsync();
     }
 }

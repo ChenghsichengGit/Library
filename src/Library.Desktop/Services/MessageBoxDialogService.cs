@@ -50,4 +50,18 @@ public class MessageBoxDialogService : IDialogService
         };
         window.ShowDialog();
     }
+
+    public int? ShowDuplicateScanner()
+    {
+        var viewModel = new DuplicatesViewModel(new WorksApiClient(), this);
+        var window = new DuplicatesWindow
+        {
+            DataContext = viewModel,
+            Owner = Application.Current.MainWindow
+        };
+        // ViewModel 要關閉時發出事件，視窗自己 Close()
+        viewModel.CloseRequested += window.Close;
+        window.ShowDialog();
+        return viewModel.SelectedWorkId;
+    }
 }

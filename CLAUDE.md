@@ -64,7 +64,7 @@ dotnet ef database update --project src/Library.Infrastructure --startup-project
 4. ~~封面：上傳、從商店抓~~（已完成：`ICoverStorage`／`LocalCoverStorage` 存在本機、`/covers` 靜態檔案；`POST /api/covers` 上傳、`POST /api/covers/download` 從網址下載（只允許 http/https，內網 SSRF 部署前處理）；用檔頭判斷格式、10MB 上限；換封面時刪掉沒人用的舊檔；WPF 選檔、拖放、Ctrl+V、抓取時帶入，上傳前縮到 900px；作者、社團、系列的封面移到第 5 步）
 5. ~~作者、社團、系列的管理~~（已完成：`Creators` 加網址、備註、封面，`Series` 加備註、封面；`PUT /api/creators/{id}`、`PUT /api/series/{id}` 改名（撞名 409）、`cover-choices` 從作品挑封面、沒設定時用最新作品的封面；換封面刪舊檔抽成 `CoverCleaner`，三張表都檢查；`?creatorId=`（不分角色）、`?seriesId=`、`GET /api/series?creatorId=`；WPF 工具列的作者／社團、系列篩選與資訊列（網址只開 http/https）、管理視窗 `CreatorSeriesWindow`；別名先不做）
 6. 外部來源補齊：DLsite、DMM／FANZA、GOG、通用 og 標籤；抓取時也帶回標籤與簡介（已完成：Steam 的 genres（繁中）與 short_description；`Works.Remark` 改名 `Description`、長度 2000；抓取時標籤只加入、簡介空的才填）
-7. 重複偵測：新增時檢查（完全相同擋下、相似提醒）、全庫掃描
+7. ~~重複偵測：新增時檢查、全庫掃描~~（已完成：`TitleNormalizer`（NFKC、小寫、去掉翻譯／語言／畫質標記，不去掉話、卷、部、集）、網址用 `UrlNormalizer`；網址相同或同作者且名稱相同是完全重複，名稱相同但作者不同是可能重複；不做相似度與包含關係（續作會一直被提醒）；`POST /api/works/check`、`GET /api/works/duplicates`（桶子分組）；WPF 表單提示框（debounce 350 ms）、儲存前完全重複要確認、全庫掃描視窗 `DuplicatesWindow`；整合測試改成共用一個資料庫、每個測試前用 Respawn 重設，約 90 → 10 秒；docs 尚未更新）
 8. 最近刪除（還原、永久刪除、清空）與批次新增
 9. 背景工作與 SignalR：批次更新價格與特價、作者／社團新作、有聲漫畫掃描、折價券活動掃描、進度回報
 10. 商店作品查詢：DLsite 搜尋並直接加入

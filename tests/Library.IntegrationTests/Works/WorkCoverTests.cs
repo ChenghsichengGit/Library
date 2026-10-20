@@ -1,7 +1,6 @@
 using Library.Application.Dtos.Requests;
 using Library.IntegrationTests.Support;
 
-
 namespace Library.IntegrationTests.Works;
 
 /// <summary>

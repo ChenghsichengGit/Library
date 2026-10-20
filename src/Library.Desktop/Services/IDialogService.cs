@@ -19,4 +19,7 @@ public interface IDialogService
 
     /// <summary>開啟作者／社團、系列的管理視窗；selectCreatorId 有值時先選好那個人。</summary>
     void ShowCreatorSeriesManager(int? selectCreatorId);
+    
+    /// <summary>開啟全庫重複掃描視窗；關閉後回傳按了「看這筆」的作品 Id，沒有選就是 null。</summary>
+    int? ShowDuplicateScanner();
 }

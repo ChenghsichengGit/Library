@@ -24,6 +24,9 @@ public partial class MainViewModel : ObservableObject
     {
         _api = api;
         _dialog = dialog;
+
+        // 網址增減時也檢查重複；直接在網址欄打字不會觸發，儲存時會再檢查
+        Urls.CollectionChanged += (_, _) => ScheduleDuplicateCheck();
     }
 
     // ── 清單與狀態 ──
@@ -166,6 +169,9 @@ public partial class MainViewModel : ObservableObject
 
         try
         {
+            if (!await ConfirmIfDuplicateAsync())
+                return;
+
             int savedId;
             if (EditingId is { } id)
             {

@@ -20,6 +20,12 @@ public class WorksApiClient
         return await _http.GetFromJsonAsync<List<WorkItem>>("api/works" + ToQueryString(query)) ?? [];
     }
 
+    /// <summary>GET /api/works/{id}：單一作品；找不到時 API 回 404，這裡丟出 HttpRequestException。</summary>
+    public async Task<WorkItem> GetWorkAsync(int id)
+    {
+        return (await _http.GetFromJsonAsync<WorkItem>($"api/works/{id}"))!;
+    }
+
     /// <summary>POST /api/works：新增作品，回傳建立好的作品（含新的 Id）。驗證失敗丟 ApiValidationException。</summary>
     public async Task<WorkItem> CreateAsync(SaveWorkRequest request)
     {
@@ -40,6 +46,29 @@ public class WorksApiClient
     {
         var response = await _http.DeleteAsync($"api/works/{id}");
         await EnsureSuccessAsync(response);
+    }
+
+    /// <summary>POST /api/works/check：表單內容和哪些既有作品重複。</summary>
+    public async Task<DuplicateCheckResult> CheckDuplicatesAsync(
+        string titleZh, string titleJa, string titleEn, List<string> authors, List<string> urls, int? excludeId,
+        CancellationToken cancellationToken = default)
+    {
+        // 屬性名稱要和後端 CheckDuplicateRequest 對得上（JSON 會轉成 camelCase）
+        var response = await _http.PostAsJsonAsync("api/works/check",
+            new
+            {
+                TitleZh = titleZh, TitleJa = titleJa, TitleEn = titleEn, Authors = authors, Urls = urls,
+                ExcludeId = excludeId
+            },
+            cancellationToken);
+        await EnsureSuccessAsync(response);
+        return (await response.Content.ReadFromJsonAsync<DuplicateCheckResult>(cancellationToken))!;
+    }
+
+    /// <summary>GET /api/works/duplicates：全庫掃描，互相重複的作品分組，完全重複的在前。</summary>
+    public async Task<List<DuplicateGroup>> GetDuplicateGroupsAsync()
+    {
+        return await _http.GetFromJsonAsync<List<DuplicateGroup>>("api/works/duplicates") ?? [];
     }
 
     // ── 商店查詢 ──

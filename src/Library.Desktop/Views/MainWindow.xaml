@@ -33,7 +33,8 @@
                                Command="{Binding ManageWorkTypesCommand}" />
                     <ui:Button Content="管理作者／系列" Icon="{ui:SymbolIcon People24}" Margin="8,0,0,0"
                                Command="{Binding ManageCreatorsCommand}" />
-
+                    <ui:Button Content="掃描重複" Icon="{ui:SymbolIcon DocumentSearch24}" Margin="8,0,0,0"
+                               Command="{Binding ScanDuplicatesCommand}" />
                 </StackPanel>
             </DockPanel>
 
@@ -214,7 +215,53 @@
                         <TextBox Text="{Binding TitleJa, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8" />
                         <TextBlock Text="英文" Style="{StaticResource FieldLabel}" />
                         <TextBox Text="{Binding TitleEn, UpdateSourceTrigger=PropertyChanged}" />
+                        <!-- 重複提示：名稱、網址和既有作品重複時出現；完全重複是紅色，可能重複是黃色 -->
+                        <Border Margin="0,8,0,0" Padding="10,6" CornerRadius="4" BorderThickness="1">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <!-- 預設是黃色（可能重複） -->
+                                    <Setter Property="Background"
+                                            Value="{DynamicResource SystemFillColorCautionBackgroundBrush}" />
+                                    <Setter Property="BorderBrush"
+                                            Value="{DynamicResource SystemFillColorCautionBrush}" />
+                                    <Style.Triggers>
+                                        <!-- 沒有重複：標題是空字串，整塊隱藏 -->
+                                        <DataTrigger Binding="{Binding DuplicateHeader}" Value="">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                        <!-- 完全重複：換成紅色 -->
+                                        <DataTrigger Binding="{Binding IsExactDuplicate}" Value="True">
+                                            <Setter Property="Background"
+                                                    Value="{DynamicResource SystemFillColorCriticalBackgroundBrush}" />
+                                            <Setter Property="BorderBrush"
+                                                    Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
 
+                            <StackPanel>
+                                <TextBlock Text="{Binding DuplicateHeader}" FontWeight="SemiBold" />
+                                <ItemsControl ItemsSource="{Binding DuplicateMatches}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type models:DuplicateMatch}">
+                                            <DockPanel Margin="0,4,0,0">
+                                                <!-- 在 ItemTemplate 裡，DataContext 是 DuplicateMatch，命令要往上找 ItemsControl 拿 -->
+                                                <ui:Button DockPanel.Dock="Right" Content="看這筆"
+                                                           Appearance="Transparent"
+                                                           Command="{Binding DataContext.ShowDuplicateCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                           CommandParameter="{Binding Id}" />
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock Text="{Binding Detail}" Opacity="0.7"
+                                                               TextWrapping="Wrap" />
+                                                </StackPanel>
+                                            </DockPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
                         <TextBlock Text="創作者" Style="{StaticResource SectionHeader}" />
                         <TextBlock Text="作者／開發人員" Style="{StaticResource FieldLabel}" />
                         <controls:NameListInput DataContext="{Binding Authors}" Margin="0,0,0,8" />

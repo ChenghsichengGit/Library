@@ -1,43 +1,19 @@
 ﻿using Library.Infrastructure.Data;
-using Microsoft.Data.SqlClient;
-using Microsoft.EntityFrameworkCore;
 
 namespace Library.IntegrationTests.Support;
 
 /// <summary>
-/// 整合測試的基底類別：每個測試用一個新資料庫，以正式的 Migration 建表，結束後刪除。
+/// 整合測試的基底類別：所有測試共用一個已 Migrate 的資料庫，每個測試開始前清空資料、放回種子資料。
 /// </summary>
 /// <remarks>
 /// 子類別仍要自己標上 [Collection("SqlServer")]：xUnit 2 不會從父類別繼承這個標記。
+/// 同一個 Collection 的測試依序執行，所以共用一個資料庫不會互相干擾。
 /// </remarks>
-public abstract class DatabaseTestBase : IAsyncLifetime
+public abstract class DatabaseTestBase(SqlServerFixture fixture) : IAsyncLifetime
 {
-    private readonly string _connectionString;
+    protected LibraryDbContext CreateDbContext() => fixture.CreateDbContext();
 
-    protected DatabaseTestBase(SqlServerFixture fixture)
-    {
-        _connectionString = new SqlConnectionStringBuilder(fixture.ConnectionString)
-        {
-            InitialCatalog = $"LibraryTest_{Guid.NewGuid():N}"
-        }.ConnectionString;
-    }
+    public Task InitializeAsync() => fixture.ResetAsync();
 
-    // 查詢設定要和正式環境（Infrastructure 的 AddDbContext）一致
-    protected LibraryDbContext CreateDbContext() =>
-        new(new DbContextOptionsBuilder<LibraryDbContext>()
-            .UseSqlServer(_connectionString, sql => sql.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery))
-            .Options);
-
-
-    public async Task InitializeAsync()
-    {
-        await using var db = CreateDbContext();
-        await db.Database.MigrateAsync();
-    }
-
-    public async Task DisposeAsync()
-    {
-        await using var db = CreateDbContext();
-        await db.Database.EnsureDeletedAsync();
-    }
+    public Task DisposeAsync() => Task.CompletedTask;
 }
