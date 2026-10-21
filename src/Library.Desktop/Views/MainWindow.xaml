@@ -35,6 +35,8 @@
                                Command="{Binding ManageCreatorsCommand}" />
                     <ui:Button Content="掃描重複" Icon="{ui:SymbolIcon DocumentSearch24}" Margin="8,0,0,0"
                                Command="{Binding ScanDuplicatesCommand}" />
+                    <ui:Button Content="{Binding TrashButtonText}" Icon="{ui:SymbolIcon Delete24}" Margin="8,0,0,0"
+                               Command="{Binding OpenTrashCommand}" />
                 </StackPanel>
             </DockPanel>
 

@@ -56,6 +56,7 @@ public partial class MainViewModel
             foreach (var work in works)
                 Works.Add(work);
             StatusMessage = $"共 {works.Count} 部作品";
+            await LoadTrashCountAsync();
         }
         catch (HttpRequestException)
         {

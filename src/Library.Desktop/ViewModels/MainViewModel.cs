@@ -210,7 +210,7 @@ public partial class MainViewModel : ObservableObject
         if (EditingId is not { } id)
             return;
 
-        if (!_dialog.Confirm("確認刪除?"))
+        if (!_dialog.Confirm("把這筆作品移到最近刪除？之後可以還原。"))
             return;
 
         try

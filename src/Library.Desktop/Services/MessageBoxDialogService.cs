@@ -64,4 +64,14 @@ public class MessageBoxDialogService : IDialogService
         window.ShowDialog();
         return viewModel.SelectedWorkId;
     }
+
+    public void ShowTrash()
+    {
+        var window = new TrashWindow
+        {
+            DataContext = new TrashViewModel(new WorksApiClient(), this),
+            Owner = Application.Current.MainWindow
+        };
+        window.ShowDialog();
+    }
 }

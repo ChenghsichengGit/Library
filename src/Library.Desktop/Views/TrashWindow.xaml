@@ -1,0 +1,55 @@
+﻿<ui:FluentWindow x:Class="Library.Desktop.Views.TrashWindow"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                 xmlns:vm="clr-namespace:Library.Desktop.ViewModels"
+                 xmlns:models="clr-namespace:Library.Desktop.Models"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 mc:Ignorable="d"
+                 d:DataContext="{d:DesignInstance Type=vm:TrashViewModel}"
+                 ExtendsContentIntoTitleBar="True"
+                 WindowBackdropType="Mica"
+                 ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
+                 ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                 Title="最近刪除" Height="600" Width="640">
+    <DockPanel>
+        <ui:TitleBar DockPanel.Dock="Top" Title="最近刪除" />
+
+        <!-- 底部：狀態訊息與全部清空 -->
+        <DockPanel DockPanel.Dock="Bottom" Margin="12,8,12,12">
+            <ui:Button DockPanel.Dock="Right" Content="全部清空" Appearance="Danger"
+                       Command="{Binding EmptyCommand}" />
+            <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,8,0" />
+        </DockPanel>
+
+        <ScrollViewer Margin="12,4,12,0" VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding Items}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type models:TrashItem}">
+                        <DockPanel Margin="0,0,0,8">
+                            <!-- 只有一層 ItemsControl：往上找最近的 ItemsControl 就拿得到 ViewModel -->
+                            <ui:Button DockPanel.Dock="Right" Content="永久刪除" Appearance="Danger" Margin="4,0,0,0"
+                                       VerticalAlignment="Center"
+                                       Command="{Binding DataContext.PurgeCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                       CommandParameter="{Binding}" />
+                            <ui:Button DockPanel.Dock="Right" Content="還原" VerticalAlignment="Center"
+                                       Command="{Binding DataContext.RestoreCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                       CommandParameter="{Binding}" />
+                            <!-- 封面縮圖：沒有封面時 Source 是 null，只剩下底色 -->
+                            <Border DockPanel.Dock="Left" Width="48" Height="48" Margin="0,0,10,0" CornerRadius="4"
+                                    Background="{DynamicResource ControlFillColorSecondaryBrush}">
+                                <Image Source="{Binding CoverUrl}" Stretch="Uniform" />
+                            </Border>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Title}" FontWeight="SemiBold"
+                                           TextTrimming="CharacterEllipsis" />
+                                <TextBlock Text="{Binding Detail}" Opacity="0.7" TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                        </DockPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </DockPanel>
+</ui:FluentWindow>

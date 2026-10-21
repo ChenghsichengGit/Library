@@ -22,4 +22,7 @@ public interface IDialogService
     
     /// <summary>開啟全庫重複掃描視窗；關閉後回傳按了「看這筆」的作品 Id，沒有選就是 null。</summary>
     int? ShowDuplicateScanner();
+    
+    /// <summary>開啟最近刪除視窗，關閉之前不能操作主視窗。</summary>
+    void ShowTrash();
 }

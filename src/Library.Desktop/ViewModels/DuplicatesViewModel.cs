@@ -45,7 +45,7 @@ public partial class DuplicatesViewModel(WorksApiClient api, IDialogService dial
     [RelayCommand]
     private async Task DeleteAsync(DuplicateGroupItem item)
     {
-        if (!dialog.Confirm($"確定刪除《{item.Title}》？"))
+        if (!dialog.Confirm($"把《{item.Title}》移到最近刪除？之後可以還原。"))
             return;
 
         try

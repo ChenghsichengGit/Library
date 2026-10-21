@@ -56,20 +56,20 @@ dotnet ef database update --project src/Library.Infrastructure --startup-project
 
 已完成：作品 CRUD API、分層架構、單元與整合測試（Testcontainers）、Docker、CI、WPF 的清單與新增／修改／刪除、搜尋、篩選與排序（主要名稱為 SQL Server 計算欄位；WPF 也有對應的工具列）、API 時間標明 UTC、WPF 表格欄位與當地時間顯示、作者與社團（多對多，`Creators` 一張表以 `WorkCreators.Role` 區分；API 只收發名字，WPF 一行一個）、外部來源 Steam（`IStoreSource` 抽象、`IHttpClientFactory`、假 handler 單元測試；`GET /api/lookup` 查詢，WPF 貼網址「抓取」填表單，不存檔）、作品類型（`WorkTypes` 一對多、`Restrict`、種子資料；作品必填 `workTypeId`、可依類型篩選；類型管理 `POST／PUT／DELETE /api/work-types`：名稱重複回 409、沒給 `SortOrder` 時排在「其他」前面、「其他」（`WorkType.OtherId`）不能刪除、刪除類型時作品（含最近刪除的）改成「其他」；WPF 表格的類型欄、表單的類型下拉選單與類型管理視窗；整合測試的資料庫準備抽成 `DatabaseTestBase`）、標籤（`Tags` 多對多，不建中間類別，`WorkTags` 由 EF Core 管理；存檔 find-or-create；`GET /api/tags` 只列有未刪除作品在用的並附數量、`DELETE /api/tags/{id}`；`?tags=…&tagMode=Any` 篩選，預設全部符合；WPF 表單輸入、表格欄位、標籤篩選列；沒人用的標籤與作者不在存檔時刪，留給整理資料庫）、系列（`int? SeriesId` 一對多、`SetNull`；存檔送名稱 find-or-create；系列的作者不存，由作品推算；`GET /api/series` 列出有作品的系列與作品數、作者；搜尋框也比對系列名稱；WPF 表單用可輸入的 ComboBox、表格的系列欄）、修改時間（`UpdatedAt`：新增、修改、軟刪除時在 `WorkService` 設定，只取一次時間；Migration 以 `UPDATE Works SET UpdatedAt = CreatedAt` 補舊資料；可依修改時間排序，評分相同時最近修改的在前；WPF 排序選項與表格欄位）、WPF 工具列依類型篩選（「全部類型」為 Id 0）。
 
-目標是和原本的 Node 版（`F:\tool\media-library`）功能一樣，規劃前先對照它的 `schema.sql`、`server.js`、`lib/scrapers.js`、`public/app.js`，不可削減功能。剩下的步驟：
+目標是和原本的 Node 版（`F:\tool\media-library`）功能一樣，規劃前先對照它的 `schema.sql`、`server.js`、`lib/scrapers.js`、`public/app.js`。功能的刪減由使用者決定；為了先放進作品集而延後的項目標成「暫緩」，之後再做，不要從清單刪掉。剩下的步驟：
 
 1. ~~作品欄位補齊：類型、標籤、系列、修改時間；WPF 依類型篩選~~（已完成）
 2. ~~UI 美化與效能~~（已完成：預設 SplitQuery、作品表格改用 ListView，換排序約 500 → 200 ms；導入 WPF UI（深色主題、`FluentWindow`、表格用 `ui:ListView`／`ui:GridView`），重新量測仍約 200 ms，剩下的慢原因不明、先不處理，見 `docs/wpf-mvvm.md`；主視窗版面整理：WPF UI 按鈕與圖示、篩選列 `WrapPanel`、標籤篩選可收合並顯示已選數量、表單分區且儲存／刪除固定在底部、表格最愛／已購買只顯示 ♥／✓；`d:DataContext`；類型管理視窗版面，共用樣式移到 `App.xaml`）
 3. ~~多網址與 DLC／追加內容~~（已完成：`WorkUrls` 一對多 + Cascade、`UrlNormalizer` 正規化後去重複、存檔整批取代、已購買改由網址推導（刪除 `Works.Purchased`）、`PATCH /api/works/{id}/urls/{position}/purchased`、enum 在 JSON 用名稱、WPF 表單的網址清單（`UrlRow`、`RelativeSource`）；DLC：`WorkDlcs`，名稱必填、不去重複、不影響已購買，「還有 DLC 沒買」篩選；預覽用 `DesignMainViewModel`）
 4. ~~封面：上傳、從商店抓~~（已完成：`ICoverStorage`／`LocalCoverStorage` 存在本機、`/covers` 靜態檔案；`POST /api/covers` 上傳、`POST /api/covers/download` 從網址下載（只允許 http/https，內網 SSRF 部署前處理）；用檔頭判斷格式、10MB 上限；換封面時刪掉沒人用的舊檔；WPF 選檔、拖放、Ctrl+V、抓取時帶入，上傳前縮到 900px；作者、社團、系列的封面移到第 5 步）
 5. ~~作者、社團、系列的管理~~（已完成：`Creators` 加網址、備註、封面，`Series` 加備註、封面；`PUT /api/creators/{id}`、`PUT /api/series/{id}` 改名（撞名 409）、`cover-choices` 從作品挑封面、沒設定時用最新作品的封面；換封面刪舊檔抽成 `CoverCleaner`，三張表都檢查；`?creatorId=`（不分角色）、`?seriesId=`、`GET /api/series?creatorId=`；WPF 工具列的作者／社團、系列篩選與資訊列（網址只開 http/https）、管理視窗 `CreatorSeriesWindow`；別名先不做）
-6. 外部來源補齊：DLsite、DMM／FANZA、GOG、通用 og 標籤；抓取時也帶回標籤與簡介（已完成：Steam 的 genres（繁中）與 short_description；`Works.Remark` 改名 `Description`、長度 2000；抓取時標籤只加入、簡介空的才填）
+6. 外部來源補齊：抓取時也帶回標籤與簡介（已完成：Steam 的 genres（繁中）與 short_description；`Works.Remark` 改名 `Description`、長度 2000；抓取時標籤只加入、簡介空的才填）；DLsite、DMM／FANZA、GOG、通用 og 標籤（暫緩）
 7. ~~重複偵測：新增時檢查、全庫掃描~~（已完成：`TitleNormalizer`（NFKC、小寫、去掉翻譯／語言／畫質標記，不去掉話、卷、部、集）、網址用 `UrlNormalizer`；網址相同或同作者且名稱相同是完全重複，名稱相同但作者不同是可能重複；不做相似度與包含關係（續作會一直被提醒）；`POST /api/works/check`、`GET /api/works/duplicates`（桶子分組）；WPF 表單提示框（debounce 350 ms）、儲存前完全重複要確認、全庫掃描視窗 `DuplicatesWindow`；整合測試改成共用一個資料庫、每個測試前用 Respawn 重設，約 90 → 10 秒；docs 尚未更新）
-8. 最近刪除（還原、永久刪除、清空）與批次新增
-9. 背景工作與 SignalR：批次更新價格與特價、作者／社團新作、有聲漫畫掃描、折價券活動掃描、進度回報
-10. 商店作品查詢：DLsite 搜尋並直接加入
-11. 匯入／匯出備份、整理資料庫（含刪除沒有作品的標籤、作者、系列）、缺少資料篩選（原版 `missing=`：網址、封面、作者、系列、價格、標籤）、統計
-12. 登入（同時處理 `UseHttpsRedirection` 在 http 設定檔下的警告）
-13. 手機版：網頁前端，共用同一個後端 API（原版是 PWA：HTML／CSS／JavaScript + manifest + service worker，可加到手機主畫面）；技術開始前再決定（Blazor WebAssembly、純 HTML + JS、React 等），需要先有登入
-14. README（Swagger 的 enum 顯示成名稱已在第 3 步完成）
+8. ~~最近刪除（還原、永久刪除、清空）~~（已完成：`TrashService`（`IgnoreQueryFilters` 連 `WorkCreator` 的篩選一起關掉、永久刪除用 `ExecuteDeleteAsync`，關聯靠資料庫 Cascade，封面沒人用才刪檔）；`GET /api/trash`、`POST /api/trash/{id}/restore`、`DELETE /api/trash/{id}`、`POST /api/trash/empty`；API 啟動時清除刪除超過 30 天的作品；WPF 最近刪除視窗 `TrashWindow`、工具列「最近刪除 (N)」；刪除時不清理沒有作品的標籤、作者、系列（清單本來就不顯示，還原時也還在））；批次新增（暫緩）
+9. 背景工作與 SignalR：先做批次更新 Steam 價格與特價、進度回報；作者／社團新作、有聲漫畫掃描、折價券活動掃描（只針對 DLsite，暫緩）
+10. 商店作品查詢：DLsite 搜尋並直接加入（暫緩）
+11. 匯入／匯出備份；整理資料庫（含刪除沒有作品的標籤、作者、系列）、缺少資料篩選（原版 `missing=`：網址、封面、作者、系列、價格、標籤）、統計（這三項暫緩）
+12. 登入（同時處理 `UseHttpsRedirection` 在 http 設定檔下的警告）（暫緩：主要是為了手機版）
+13. 手機版：網頁前端，共用同一個後端 API（原版是 PWA：HTML／CSS／JavaScript + manifest + service worker，可加到手機主畫面）；技術開始前再決定（Blazor WebAssembly、純 HTML + JS、React 等），需要先有登入（暫緩）
+14. README（Swagger 的 enum 顯示成名稱已在第 3 步完成）：下一步先做，做完就放進作品集；之後依序 9（縮小版）、11 的匯出／匯入
 15. ~~作者、社團、系列、標籤的輸入框改用 AutoSuggestBox~~（已完成：`GET /api/creators?role=`；作者、社團、標籤共用 `NameListEditor`／`NameListInput`，已加入的名字顯示成標籤塊；系列用 AutoSuggestBox，目前作者的系列排在前面；捲動表單時收起建議清單）

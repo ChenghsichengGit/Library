@@ -71,6 +71,36 @@ public class WorksApiClient
         return await _http.GetFromJsonAsync<List<DuplicateGroup>>("api/works/duplicates") ?? [];
     }
 
+    // ── 最近刪除 ──
+
+    /// <summary>GET /api/trash：已刪除的作品，最近刪除的在前。</summary>
+    public async Task<TrashList> GetTrashAsync()
+    {
+        return (await _http.GetFromJsonAsync<TrashList>("api/trash"))!;
+    }
+
+    /// <summary>POST /api/trash/{id}/restore：還原。</summary>
+    public async Task RestoreAsync(int id)
+    {
+        var response = await _http.PostAsync($"api/trash/{id}/restore", null);
+        await EnsureSuccessAsync(response);
+    }
+
+    /// <summary>DELETE /api/trash/{id}：永久刪除。</summary>
+    public async Task PurgeAsync(int id)
+    {
+        var response = await _http.DeleteAsync($"api/trash/{id}");
+        await EnsureSuccessAsync(response);
+    }
+
+    /// <summary>POST /api/trash/empty：清空，回傳刪了幾部。</summary>
+    public async Task<int> EmptyTrashAsync()
+    {
+        var response = await _http.PostAsync("api/trash/empty", null);
+        await EnsureSuccessAsync(response);
+        return (await response.Content.ReadFromJsonAsync<EmptyTrashResult>())!.Removed;
+    }
+
     // ── 商店查詢 ──
 
     /// <summary>
@@ -275,4 +305,7 @@ public class WorksApiClient
 
     // ASP.NET Core 驗證失敗的回應，只取 errors
     private record ValidationProblem(Dictionary<string, string[]> Errors);
+
+    // POST /api/trash/empty 的回應 { removed: 3 }
+    private record EmptyTrashResult(int Removed);
 }

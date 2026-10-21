@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Library.Application;
+using Library.Application.Services;
 using Library.Infrastructure;
 using Microsoft.Extensions.FileProviders;
 
@@ -21,6 +22,16 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration, coverDirectory);
 
 var app = builder.Build();
+
+// ── 啟動時的工作 ──
+// 刪除超過 30 天的作品永久清除（同原版）。這時還沒有請求，要自己建立 scope 才拿得到 Scoped 的服務
+using (var scope = app.Services.CreateScope())
+{
+    var trash = scope.ServiceProvider.GetRequiredService<TrashService>();
+    var purged = await trash.PurgeExpiredAsync();
+    if (purged > 0)
+        app.Logger.LogInformation("已永久刪除超過 {Days} 天的作品 {Count} 部", TrashService.KeepDays, purged);
+}
 
 // ── 請求管線 ──
 // Swagger 只在開發環境開放
