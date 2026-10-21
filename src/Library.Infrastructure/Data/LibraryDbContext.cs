@@ -86,6 +86,7 @@ public class LibraryDbContext : DbContext, ILibraryDbContext
         modelBuilder.Entity<WorkUrl>().ToTable("WorkUrls");
         // 精度寫在這裡而不是 Entity 的 [Precision]，Domain 才不必依賴 EF Core
         modelBuilder.Entity<WorkUrl>().Property(u => u.Price).HasPrecision(12, 2);
+        modelBuilder.Entity<WorkUrl>().Property(u => u.ListPrice).HasPrecision(12, 2);
         // 存名稱，資料庫看得懂，日後調整 enum 順序也不影響舊資料
         modelBuilder.Entity<WorkUrl>().Property(u => u.Language).HasConversion<string>().HasMaxLength(20);
         modelBuilder.Entity<WorkUrl>().HasQueryFilter(wu => wu.Work.DeletedAt == null);

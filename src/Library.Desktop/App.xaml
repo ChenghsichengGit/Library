@@ -21,6 +21,13 @@
                 <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
                 <Setter Property="Margin" Value="0,0,0,2" />
             </Style>
+            <!-- 表單左側的短標籤（標籤在左、輸入框在右） -->
+            <Style x:Key="RowLabel" TargetType="TextBlock">
+                <Setter Property="Width" Value="48" />
+                <Setter Property="Margin" Value="0,8,0,0" />
+                <Setter Property="VerticalAlignment" Value="Top" />
+                <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+            </Style>
             <!-- 表單分區的標題 -->
             <Style x:Key="SectionHeader" TargetType="TextBlock">
                 <Setter Property="FontWeight" Value="SemiBold" />

@@ -27,6 +27,7 @@ public partial class MainViewModel : ObservableObject
 
         // 網址增減時也檢查重複；直接在網址欄打字不會觸發，儲存時會再檢查
         Urls.CollectionChanged += (_, _) => ScheduleDuplicateCheck();
+        Dlcs.CollectionChanged += (_, _) => OnPropertyChanged(nameof(DlcHeader));
     }
 
     // ── 清單與狀態 ──

@@ -49,6 +49,24 @@ public record WorkItem(
 
     public string PurchasedText => Purchased ? "✓" : "";
 
+    /// <summary>
+    /// 表格的價格欄。有特價的網址取折扣最大的，都沒特價取最便宜的（同原版）；幣別不同時不換算，直接比數字。
+    /// </summary>
+    public string PriceText
+    {
+        get
+        {
+            var priced = Urls.Where(u => u.Price is not null).ToList();
+            if (priced.Count == 0)
+                return "";
+
+            var shown = priced.Any(u => u.Discount > 0)
+                ? priced.MaxBy(u => u.Discount)!
+                : priced.MinBy(u => u.Price)!;
+            return PriceFormat.WithDiscount(shown.Price!.Value, shown.Currency, shown.ListPrice, shown.Discount);
+        }
+    }
+
     /// <summary>表格用「、」接成一行；表單編輯用換行（MainViewModel.AuthorsInput）。</summary>
     public string AuthorsText => string.Join("、", Authors);
 

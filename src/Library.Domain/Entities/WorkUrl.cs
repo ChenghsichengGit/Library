@@ -27,6 +27,12 @@ public class WorkUrl
     /// <summary>原幣別的價格；null 代表沒有價格（和免費不同）。</summary>
     public decimal? Price { get; set; }
 
+    /// <summary>原價；沒有特價時等於 Price。</summary>
+    public decimal? ListPrice { get; set; }
+
+    /// <summary>折扣百分比，0 代表沒有特價。</summary>
+    public int Discount { get; set; }
+
     [MaxLength(8)]
     public string Currency { get; set; } = "";
 }

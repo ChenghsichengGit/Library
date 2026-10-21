@@ -20,6 +20,12 @@ public class SaveWorkUrlRequest
     [Range(typeof(decimal), "0", "9999999999.99")]
     public decimal? Price { get; set; }
 
+    [Range(typeof(decimal), "0", "9999999999.99")]
+    public decimal? ListPrice { get; set; }
+
+    [Range(0, 100)]
+    public int Discount { get; set; }
+
     [MaxLength(8)]
     public string? Currency { get; set; }
 }

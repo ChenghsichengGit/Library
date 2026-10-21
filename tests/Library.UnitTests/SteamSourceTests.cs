@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Text;
+using System.Text.RegularExpressions;
 using Library.Infrastructure.Sources;
 
 namespace Library.UnitTests;
@@ -24,11 +25,12 @@ public class SteamSourceTests
         }
     }
 
-    // 依照網址的 l= 參數回傳不同語言的 JSON，模擬 Steam 的行為
-    private static SteamSource CreateSource(Func<string, string> jsonForLanguage) =>
+    // 依照網址的 l= 參數回傳不同語言的 JSON，模擬 Steam 的行為；requests 有給時記下送出的網址
+    private static SteamSource CreateSource(Func<string, string> jsonForLanguage, List<Uri>? requests = null) =>
         new(new HttpClient(new FakeHandler(request =>
         {
-            var language = request.RequestUri!.Query.Split("l=")[1];
+            requests?.Add(request.RequestUri!);
+            var language = Regex.Match(request.RequestUri!.Query, "[?&]l=([^&]+)").Groups[1].Value;
             return jsonForLanguage(language);
         }))
         {
@@ -77,6 +79,7 @@ public class SteamSourceTests
         Assert.Equal(["Valve", "EA"], result.Circles);
         Assert.Equal(new DateOnly(2011, 4, 18), result.ReleaseDate);
         Assert.Equal(HeaderImage, result.CoverImageUrl);
+        Assert.Equal("遊戲", result.WorkType);
     }
 
     [Fact]
@@ -194,7 +197,25 @@ public class SteamSourceTests
         Assert.Equal("Think with \"portals\" & more", result!.Description);
     }
 
-    // 防：沒有 genres、short_description 時丟出 NullReferenceException
+    // 防：沒指定區域（幣別依伺服器所在地而變）、整數除法把小數捨去、原價和現價拿反、折扣沒帶回來
+    [Fact]
+    public async Task FetchAsync_Price_ListPriceAndDiscount_InTaiwanDollars()
+    {
+        var requests = new List<Uri>();
+        var source = CreateSource(_ => AppJson("Portal 2", extra: """
+            "price_overview": { "currency": "TWD", "initial": 26900, "final": 13450, "discount_percent": 50 },
+            """), requests);
+
+        var result = await source.FetchAsync(new Uri("https://store.steampowered.com/app/620"));
+
+        Assert.Equal(134.50m, result!.Price);
+        Assert.Equal(269m, result.ListPrice);
+        Assert.Equal(50, result.Discount);
+        Assert.Equal("TWD", result.Currency);
+        Assert.All(requests, uri => Assert.Contains("cc=tw", uri.Query));
+    }
+
+    // 防：沒有 genres、short_description、price_overview（免費遊戲）時丟出 NullReferenceException；幣別變成 null
     [Fact]
     public async Task FetchAsync_NoGenresOrDescription_ReturnsEmpty()
     {
@@ -203,6 +224,10 @@ public class SteamSourceTests
         var result = await source.FetchAsync(new Uri("https://store.steampowered.com/app/620"));
 
         Assert.Empty(result!.Tags);
+        Assert.Null(result.Price);
+        Assert.Null(result.ListPrice);
+        Assert.Equal(0, result.Discount);
+        Assert.Equal("", result.Currency);
         Assert.Equal("", result.Description);
     }
 }

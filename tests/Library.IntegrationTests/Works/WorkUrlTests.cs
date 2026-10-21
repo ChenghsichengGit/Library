@@ -57,6 +57,30 @@ public class WorkUrlTests(SqlServerFixture fixture) : WorkServiceTestBase(fixtur
         Assert.Equal(["https://c.example.com"], (await GetWorkAsync(id))!.Urls.Select(u => u.Url));
     }
 
+    // 防：原價、折扣沒存進資料庫或沒放進 WorkUrlDto（重新讀取後折扣消失）、原價的小數被截掉
+    [Fact]
+    public async Task CreateAsync_SavesListPriceAndDiscount()
+    {
+        var id = await CreateWorkAsync(new SaveWorkRequest
+        {
+            TitleJa = "テスト",
+            WorkTypeId = 1,
+            Urls =
+            [
+                new SaveWorkUrlRequest
+                {
+                    Url = "https://store.steampowered.com/app/620", Price = 134.5m, ListPrice = 269.99m, Discount = 50,
+                    Currency = "TWD"
+                }
+            ]
+        });
+
+        var url = Assert.Single((await GetWorkAsync(id))!.Urls);
+        Assert.Equal(134.5m, url.Price);
+        Assert.Equal(269.99m, url.ListPrice);
+        Assert.Equal(50, url.Discount);
+    }
+
     // 防：已購買的推導寫成 All 或寫死 false
     [Fact]
     public async Task GetByIdAsync_PurchasedWhenAnyUrlPurchased()

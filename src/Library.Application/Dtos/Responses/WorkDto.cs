@@ -59,7 +59,8 @@ public record WorkDto(
             w.SeriesId,
             w.Series?.Name,
             w.Urls.OrderBy(u => u.Position)
-                .Select(u => new WorkUrlDto(u.Url, u.Purchased, u.Language, u.Price, u.Currency))
+                .Select(u =>
+                    new WorkUrlDto(u.Url, u.Purchased, u.Language, u.Price, u.ListPrice, u.Discount, u.Currency))
                 .ToArray(),
             w.Dlcs.OrderBy(d => d.Position)
                 .Select(d => new WorkDlcDto(d.Name, d.Url, d.Purchased, d.Price, d.Currency))

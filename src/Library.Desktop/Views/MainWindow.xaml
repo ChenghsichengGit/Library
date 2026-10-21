@@ -134,7 +134,7 @@
             </Expander>
 
             <!-- 右側：編輯表單。儲存、刪除固定在底部，表單本身比視窗高時可捲動 -->
-            <DockPanel x:Name="EditForm" DockPanel.Dock="Right" Width="320" Margin="12,0,0,0">
+            <DockPanel x:Name="EditForm" DockPanel.Dock="Right" Width="340" Margin="12,0,0,0">
                 <StackPanel DockPanel.Dock="Bottom" Margin="0,8,0,0">
                     <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" TextWrapping="Wrap" Margin="0,0,0,8" />
                     <Grid>
@@ -154,7 +154,6 @@
                               ScrollChanged="FormScroll_ScrollChanged">
                     <StackPanel Margin="0,0,12,0">
                         <!-- 從商店抓資料：只填表單，不存檔 -->
-                        <TextBlock Text="從商店網址抓取" Style="{StaticResource FieldLabel}" />
                         <DockPanel>
                             <ui:Button DockPanel.Dock="Right" Content="抓取" Icon="{ui:SymbolIcon ArrowDownload24}"
                                        Margin="6,0,0,0" Command="{Binding FetchCommand}" />
@@ -165,13 +164,11 @@
                                 </ui:TextBox.InputBindings>
                             </ui:TextBox>
                         </DockPanel>
-                        <Separator Margin="0,12,0,0" />
 
                         <!-- 封面：可拖放圖片到框裡；剪貼簿裡是圖片時按 Ctrl+V 貼上 -->
-                        <TextBlock Text="封面" Style="{StaticResource SectionHeader}" />
                         <Border AllowDrop="True" DragOver="CoverArea_DragOver" Drop="CoverArea_Drop"
                                 Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                                CornerRadius="6" Height="200">
+                                CornerRadius="6" Height="160" Margin="0,10,0,0">
                             <Grid>
                                 <!-- 沒有指定 Row、Column，三個元素疊在同一格：預覽、提示、進度圈 -->
                                 <Image Source="{Binding CoverPreviewUrl}" Stretch="Uniform" Margin="4" />
@@ -196,27 +193,23 @@
                                                  Visibility="{Binding IsCoverBusy, Converter={StaticResource BoolToVisibility}}" />
                             </Grid>
                         </Border>
-                        <Grid Margin="0,6,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="8" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <ui:Button Grid.Column="0" Content="選擇圖片" Icon="{ui:SymbolIcon ImageAdd24}"
-                                       HorizontalAlignment="Stretch" Command="{Binding PickCoverCommand}" />
-                            <ui:Button Grid.Column="2" Content="移除" Icon="{ui:SymbolIcon Dismiss24}"
-                                       HorizontalAlignment="Stretch" Command="{Binding RemoveCoverCommand}" />
-                        </Grid>
-                        <TextBlock Text="{Binding CoverStatus}" Style="{StaticResource FieldLabel}" Margin="0,4,0,0" />
-                        <Separator Margin="0,12,0,0" />
+                        <DockPanel Margin="0,4,0,0">
+                            <ui:Button DockPanel.Dock="Right" Icon="{ui:SymbolIcon Dismiss24}" Appearance="Transparent"
+                                       ToolTip="移除封面" Command="{Binding RemoveCoverCommand}" />
+                            <ui:Button DockPanel.Dock="Right" Icon="{ui:SymbolIcon ImageAdd24}"
+                                       Appearance="Transparent"
+                                       ToolTip="選擇圖片" Command="{Binding PickCoverCommand}" />
+                            <TextBlock Text="{Binding CoverStatus}" Style="{StaticResource FieldLabel}"
+                                       VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                        </DockPanel>
 
-                        <TextBlock Text="名稱" Style="{StaticResource SectionHeader}" />
-                        <TextBlock Text="中文" Style="{StaticResource FieldLabel}" />
-                        <TextBox Text="{Binding TitleZh, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8" />
-                        <TextBlock Text="日文" Style="{StaticResource FieldLabel}" />
-                        <TextBox Text="{Binding TitleJa, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8" />
-                        <TextBlock Text="英文" Style="{StaticResource FieldLabel}" />
-                        <TextBox Text="{Binding TitleEn, UpdateSourceTrigger=PropertyChanged}" />
+                        <!-- 名稱：用提示文字代替標籤 -->
+                        <ui:TextBox Text="{Binding TitleZh, UpdateSourceTrigger=PropertyChanged}"
+                                    PlaceholderText="中文名稱" Margin="0,8,0,6" />
+                        <ui:TextBox Text="{Binding TitleJa, UpdateSourceTrigger=PropertyChanged}"
+                                    PlaceholderText="日文名稱" Margin="0,0,0,6" />
+                        <ui:TextBox Text="{Binding TitleEn, UpdateSourceTrigger=PropertyChanged}"
+                                    PlaceholderText="英文名稱" />
                         <!-- 重複提示：名稱、網址和既有作品重複時出現；完全重複是紅色，可能重複是黃色 -->
                         <Border Margin="0,8,0,0" Padding="10,6" CornerRadius="4" BorderThickness="1">
                             <Border.Style>
@@ -264,156 +257,164 @@
                                 </ItemsControl>
                             </StackPanel>
                         </Border>
-                        <TextBlock Text="創作者" Style="{StaticResource SectionHeader}" />
-                        <TextBlock Text="作者／開發人員" Style="{StaticResource FieldLabel}" />
-                        <controls:NameListInput DataContext="{Binding Authors}" Margin="0,0,0,8" />
-                        <TextBlock Text="社團／發行商" Style="{StaticResource FieldLabel}" />
-                        <controls:NameListInput DataContext="{Binding Circles}" />
 
-                        <TextBlock Text="分類" Style="{StaticResource SectionHeader}" />
-                        <Grid Margin="0,0,0,8">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="8" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Text="類型" Style="{StaticResource FieldLabel}" />
-                                <ComboBox ItemsSource="{Binding WorkTypes}" DisplayMemberPath="Name"
-                                          SelectedValuePath="Id" SelectedValue="{Binding WorkTypeId}" />
-                            </StackPanel>
-                            <StackPanel Grid.Column="2">
-                                <TextBlock Text="上架日期" Style="{StaticResource FieldLabel}" />
-                                <DatePicker SelectedDate="{Binding ReleaseDate}" />
-                            </StackPanel>
-                        </Grid>
-                        <TextBlock Text="系列" Style="{StaticResource FieldLabel}" />
-                        <!-- 可直接輸入新系列（存檔時由 API 建立），也可以從建議選；目前作者的系列排前面 -->
-                        <ui:AutoSuggestBox
-                            Text="{Binding SeriesInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                            ItemsSource="{Binding SeriesSuggestions}"
-                            UpdateTextOnSelect="False"
-                            TextChanged="SeriesBox_TextChanged"
-                            SuggestionChosen="SeriesBox_SuggestionChosen"
-                            Margin="0,0,0,8">
-                            <ui:AutoSuggestBox.ItemTemplate>
-                                <DataTemplate DataType="{x:Type models:SeriesItem}">
-                                    <DockPanel>
-                                        <TextBlock DockPanel.Dock="Right" Text="{Binding Detail}" Margin="12,0,0,0"
-                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                                        <TextBlock Text="{Binding Name}" />
-                                    </DockPanel>
-                                </DataTemplate>
-                            </ui:AutoSuggestBox.ItemTemplate>
-                        </ui:AutoSuggestBox>
-                        <TextBlock Text="標籤" Style="{StaticResource FieldLabel}" />
-                        <controls:NameListInput DataContext="{Binding Tags}" />
-
-                        <TextBlock Text="評價" Style="{StaticResource SectionHeader}" />
+                        <!-- 其他欄位：標籤在左、輸入在右 -->
+                        <DockPanel Margin="0,10,0,6">
+                            <TextBlock Text="作者" Style="{StaticResource RowLabel}" />
+                            <controls:NameListInput DataContext="{Binding Authors}" />
+                        </DockPanel>
+                        <DockPanel Margin="0,0,0,6">
+                            <TextBlock Text="社團" Style="{StaticResource RowLabel}" />
+                            <controls:NameListInput DataContext="{Binding Circles}" />
+                        </DockPanel>
+                        <DockPanel Margin="0,0,0,6">
+                            <TextBlock Text="類型" Style="{StaticResource RowLabel}" />
+                            <DatePicker DockPanel.Dock="Right" SelectedDate="{Binding ReleaseDate}" Width="136"
+                                        Margin="6,0,0,0" ToolTip="上架日期" />
+                            <ComboBox ItemsSource="{Binding WorkTypes}" DisplayMemberPath="Name"
+                                      SelectedValuePath="Id" SelectedValue="{Binding WorkTypeId}" />
+                        </DockPanel>
+                        <DockPanel Margin="0,0,0,6">
+                            <TextBlock Text="系列" Style="{StaticResource RowLabel}" />
+                            <!-- 可直接輸入新系列（存檔時由 API 建立），也可以從建議選；目前作者的系列排前面 -->
+                            <ui:AutoSuggestBox
+                                Text="{Binding SeriesInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                ItemsSource="{Binding SeriesSuggestions}"
+                                UpdateTextOnSelect="False"
+                                TextChanged="SeriesBox_TextChanged"
+                                SuggestionChosen="SeriesBox_SuggestionChosen">
+                                <ui:AutoSuggestBox.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type models:SeriesItem}">
+                                        <DockPanel>
+                                            <TextBlock DockPanel.Dock="Right" Text="{Binding Detail}" Margin="12,0,0,0"
+                                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                            <TextBlock Text="{Binding Name}" />
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </ui:AutoSuggestBox.ItemTemplate>
+                            </ui:AutoSuggestBox>
+                        </DockPanel>
+                        <DockPanel Margin="0,0,0,6">
+                            <TextBlock Text="標籤" Style="{StaticResource RowLabel}" />
+                            <controls:NameListInput DataContext="{Binding Tags}" />
+                        </DockPanel>
                         <DockPanel>
+                            <TextBlock Text="評分" Style="{StaticResource RowLabel}" />
                             <CheckBox DockPanel.Dock="Right" Content="最愛" IsChecked="{Binding Favorite}"
                                       MinWidth="0" Margin="12,0,0,0" />
-                            <StackPanel>
-                                <TextBlock Text="評分（6 是王冠）" Style="{StaticResource FieldLabel}" />
-                                <ComboBox ItemsSource="{Binding ScoreOptions}" SelectedItem="{Binding Score}" />
-                            </StackPanel>
+                            <ComboBox ItemsSource="{Binding ScoreOptions}" SelectedItem="{Binding Score}"
+                                      ToolTip="6 是王冠" />
                         </DockPanel>
 
-                        <TextBlock Text="商店網址" Style="{StaticResource SectionHeader}" />
+                        <TextBlock Text="商店網址" Style="{StaticResource SectionHeader}" Margin="0,14,0,6" />
                         <!-- 每一列的 DataContext 是 UrlRow；選項和命令在 MainViewModel，要經 RelativeSource 往上取 -->
                         <ItemsControl ItemsSource="{Binding Urls}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate DataType="{x:Type parts:UrlRow}">
                                     <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                                            CornerRadius="6" Padding="8" Margin="0,0,0,8">
+                                            CornerRadius="6" Padding="8" Margin="0,0,0,6">
                                         <StackPanel>
                                             <DockPanel>
                                                 <ui:Button DockPanel.Dock="Right" Icon="{ui:SymbolIcon Dismiss24}"
-                                                           ToolTip="移除這個網址" Margin="4,0,0,0"
+                                                           Appearance="Transparent" ToolTip="移除這個網址" Margin="4,0,0,0"
                                                            Command="{Binding DataContext.RemoveUrlCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                            CommandParameter="{Binding}" />
                                                 <ui:TextBox Text="{Binding Url, UpdateSourceTrigger=PropertyChanged}"
                                                             PlaceholderText="https://…" />
                                             </DockPanel>
-                                            <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                                                <ComboBox
-                                                    ItemsSource="{Binding DataContext.UrlLanguageOptions, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                    DisplayMemberPath="Label" SelectedValuePath="Value"
-                                                    SelectedValue="{Binding Language}" Width="100" Margin="0,0,12,0" />
-                                                <CheckBox Content="已購買" IsChecked="{Binding Purchased}" MinWidth="0" />
-                                            </StackPanel>
                                             <DockPanel Margin="0,6,0,0">
                                                 <!-- 清單順序就是存檔的順序，第一個是主要網址 -->
                                                 <ui:Button DockPanel.Dock="Right" Icon="{ui:SymbolIcon ArrowDown24}"
-                                                           ToolTip="往下移" Margin="4,0,0,0"
+                                                           Appearance="Transparent" ToolTip="往下移"
                                                            Command="{Binding DataContext.MoveUrlDownCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                            CommandParameter="{Binding}" />
                                                 <ui:Button DockPanel.Dock="Right" Icon="{ui:SymbolIcon ArrowUp24}"
-                                                           ToolTip="往上移" Margin="4,0,0,0"
+                                                           Appearance="Transparent" ToolTip="往上移"
                                                            Command="{Binding DataContext.MoveUrlUpCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                            CommandParameter="{Binding}" />
-                                                <StackPanel Orientation="Horizontal">
-                                                    <ui:TextBox Text="{Binding PriceText, UpdateSourceTrigger=PropertyChanged}"
-                                                                PlaceholderText="價格" Width="96" />
-                                                    <ui:TextBox Text="{Binding Currency, UpdateSourceTrigger=PropertyChanged}"
-                                                                PlaceholderText="幣別" Width="72" Margin="6,0,0,0" />
-                                                </StackPanel>
-                                            </DockPanel>
-                                        </StackPanel>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                        <ui:Button Content="新增網址" Icon="{ui:SymbolIcon Add24}" HorizontalAlignment="Stretch"
-                                   Command="{Binding AddUrlCommand}" />
-                        <TextBlock Text="DLC／追加內容" Style="{StaticResource SectionHeader}" />
-                        <!-- 結構同網址卡片；名稱必填，網址可省略，沒有語言 -->
-                        <ItemsControl ItemsSource="{Binding Dlcs}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate DataType="{x:Type parts:DlcRow}">
-                                    <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                                            CornerRadius="6" Padding="8" Margin="0,0,0,8">
-                                        <StackPanel>
-                                            <DockPanel>
-                                                <ui:Button DockPanel.Dock="Right" Icon="{ui:SymbolIcon Dismiss24}"
-                                                           ToolTip="移除這個 DLC" Margin="4,0,0,0"
-                                                           Command="{Binding DataContext.RemoveDlcCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                           CommandParameter="{Binding}" />
-                                                <ui:TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
-                                                            PlaceholderText="名稱" />
-                                            </DockPanel>
-                                            <ui:TextBox Text="{Binding Url, UpdateSourceTrigger=PropertyChanged}"
-                                                        PlaceholderText="網址（可省略）"
-                                                        Margin="0,6,0,0" />
-                                            <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                                <ComboBox
+                                                    ItemsSource="{Binding DataContext.UrlLanguageOptions, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                    DisplayMemberPath="Label" SelectedValuePath="Value"
+                                                    SelectedValue="{Binding Language}" Width="92" Margin="0,0,10,0" />
                                                 <CheckBox Content="已購買" IsChecked="{Binding Purchased}" MinWidth="0" />
-                                            </StackPanel>
+                                            </DockPanel>
                                             <DockPanel Margin="0,6,0,0">
-                                                <ui:Button DockPanel.Dock="Right" Icon="{ui:SymbolIcon ArrowDown24}"
-                                                           ToolTip="往下移" Margin="4,0,0,0"
-                                                           Command="{Binding DataContext.MoveDlcDownCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                           CommandParameter="{Binding}" />
-                                                <ui:Button DockPanel.Dock="Right" Icon="{ui:SymbolIcon ArrowUp24}"
-                                                           ToolTip="往上移" Margin="4,0,0,0"
-                                                           Command="{Binding DataContext.MoveDlcUpCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                           CommandParameter="{Binding}" />
-                                                <StackPanel Orientation="Horizontal">
-                                                    <ui:TextBox Text="{Binding PriceText, UpdateSourceTrigger=PropertyChanged}"
-                                                                PlaceholderText="價格" Width="96" />
-                                                    <ui:TextBox Text="{Binding Currency, UpdateSourceTrigger=PropertyChanged}"
-                                                                PlaceholderText="幣別" Width="72" Margin="6,0,0,0" />
-                                                </StackPanel>
+                                                <ui:TextBox
+                                                    Text="{Binding PriceText, UpdateSourceTrigger=PropertyChanged}"
+                                                    PlaceholderText="價格" Width="84" />
+                                                <ui:TextBox
+                                                    Text="{Binding Currency, UpdateSourceTrigger=PropertyChanged}"
+                                                    PlaceholderText="幣別" Width="64" Margin="6,0,0,0" />
+                                                <!-- 有特價時才有文字：原價 NT$268（−50%） -->
+                                                <TextBlock Text="{Binding DiscountText}" Margin="8,0,0,0"
+                                                           VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                                             </DockPanel>
                                         </StackPanel>
                                     </Border>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                        <ui:Button Content="新增 DLC" Icon="{ui:SymbolIcon Add24}" HorizontalAlignment="Stretch"
-                                   Command="{Binding AddDlcCommand}" />
-                        <TextBlock Text="簡介" Style="{StaticResource SectionHeader}" />
-                        <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}"
-                                 Height="120" TextWrapping="Wrap" AcceptsReturn="True" />
+                        <ui:Button Content="新增網址" Icon="{ui:SymbolIcon Add24}" Appearance="Transparent"
+                                   HorizontalAlignment="Stretch" Command="{Binding AddUrlCommand}" />
+
+                        <!-- 不常用的區塊預設收起來；標題顯示 DLC 數量 -->
+                        <Expander Header="{Binding DlcHeader}" Margin="0,10,0,0">
+                            <StackPanel>
+                                <!-- 結構同網址卡片；名稱必填，網址可省略，沒有語言 -->
+                                <ItemsControl ItemsSource="{Binding Dlcs}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type parts:DlcRow}">
+                                            <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                                                    CornerRadius="6" Padding="8" Margin="0,0,0,6">
+                                                <StackPanel>
+                                                    <DockPanel>
+                                                        <ui:Button DockPanel.Dock="Right"
+                                                                   Icon="{ui:SymbolIcon Dismiss24}"
+                                                                   Appearance="Transparent" ToolTip="移除這個 DLC"
+                                                                   Margin="4,0,0,0"
+                                                                   Command="{Binding DataContext.RemoveDlcCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                   CommandParameter="{Binding}" />
+                                                        <ui:TextBox
+                                                            Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                                                            PlaceholderText="名稱" />
+                                                    </DockPanel>
+                                                    <ui:TextBox
+                                                        Text="{Binding Url, UpdateSourceTrigger=PropertyChanged}"
+                                                        PlaceholderText="網址（可省略）" Margin="0,6,0,0" />
+                                                    <DockPanel Margin="0,6,0,0">
+                                                        <ui:Button DockPanel.Dock="Right"
+                                                                   Icon="{ui:SymbolIcon ArrowDown24}"
+                                                                   Appearance="Transparent" ToolTip="往下移"
+                                                                   Command="{Binding DataContext.MoveDlcDownCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                   CommandParameter="{Binding}" />
+                                                        <ui:Button DockPanel.Dock="Right"
+                                                                   Icon="{ui:SymbolIcon ArrowUp24}"
+                                                                   Appearance="Transparent" ToolTip="往上移"
+                                                                   Command="{Binding DataContext.MoveDlcUpCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                   CommandParameter="{Binding}" />
+                                                        <ui:TextBox
+                                                            Text="{Binding PriceText, UpdateSourceTrigger=PropertyChanged}"
+                                                            PlaceholderText="價格" Width="84" />
+                                                        <ui:TextBox
+                                                            Text="{Binding Currency, UpdateSourceTrigger=PropertyChanged}"
+                                                            PlaceholderText="幣別" Width="64" Margin="6,0,10,0" />
+                                                        <CheckBox Content="已購買" IsChecked="{Binding Purchased}"
+                                                                  MinWidth="0" />
+                                                    </DockPanel>
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <ui:Button Content="新增 DLC" Icon="{ui:SymbolIcon Add24}" Appearance="Transparent"
+                                           HorizontalAlignment="Stretch" Command="{Binding AddDlcCommand}" />
+                            </StackPanel>
+                        </Expander>
+                        <Expander Header="簡介" Margin="0,6,0,0">
+                            <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}"
+                                     Height="120" TextWrapping="Wrap" AcceptsReturn="True" />
+                        </Expander>
                     </StackPanel>
                 </ScrollViewer>
             </DockPanel>
@@ -425,14 +426,16 @@
                 <ui:ListView.View>
                     <ui:GridView>
                         <ui:GridViewColumn Header="作品名" DisplayMemberBinding="{Binding Title}" Width="220" />
-                        <ui:GridViewColumn Header="作者" DisplayMemberBinding="{Binding AuthorsText}" Width="120" />
-                        <ui:GridViewColumn Header="社團" DisplayMemberBinding="{Binding CirclesText}" Width="120" />
-                        <ui:GridViewColumn Header="類型" DisplayMemberBinding="{Binding WorkType}" Width="64" />
-                        <ui:GridViewColumn Header="系列" DisplayMemberBinding="{Binding Series}" Width="100" />
-                        <ui:GridViewColumn Header="標籤" DisplayMemberBinding="{Binding TagsText}" Width="120" />
-                        <ui:GridViewColumn Header="評分" DisplayMemberBinding="{Binding ScoreText}" Width="80" />
                         <ui:GridViewColumn Header="最愛" DisplayMemberBinding="{Binding FavoriteText}" Width="56" />
                         <ui:GridViewColumn Header="已購買" DisplayMemberBinding="{Binding PurchasedText}" Width="64" />
+                        <!-- 有特價時是「原價 → 現價（−折扣%）」；多個網址時取折扣最大的，都沒特價取最便宜的 -->
+                        <ui:GridViewColumn Header="價格" DisplayMemberBinding="{Binding PriceText}" Width="200" />
+                        <ui:GridViewColumn Header="類型" DisplayMemberBinding="{Binding WorkType}" Width="64" />
+                        <ui:GridViewColumn Header="系列" DisplayMemberBinding="{Binding Series}" Width="100" />
+                        <ui:GridViewColumn Header="評分" DisplayMemberBinding="{Binding ScoreText}" Width="80" />
+                        <ui:GridViewColumn Header="標籤" DisplayMemberBinding="{Binding TagsText}" Width="120" />
+                        <ui:GridViewColumn Header="作者" DisplayMemberBinding="{Binding AuthorsText}" Width="120" />
+                        <ui:GridViewColumn Header="社團" DisplayMemberBinding="{Binding CirclesText}" Width="120" />
                         <ui:GridViewColumn Header="上架日"
                                            DisplayMemberBinding="{Binding ReleaseDate, StringFormat=yyyy/MM/dd}"
                                            Width="96" />

@@ -54,6 +54,9 @@ public partial class MainViewModel
     // DLC／追加內容，不影響作品的「已購買」
     public ObservableCollection<DlcRow> Dlcs { get; } = [];
 
+    /// <summary>表單 DLC 區塊的標題；區塊預設收合，所以把數量寫在標題上。</summary>
+    public string DlcHeader => Dlcs.Count == 0 ? "DLC／追加內容" : $"DLC／追加內容（{Dlcs.Count}）";
+
     /// <summary>表單的 DLC 清單多一列空白的；沒填名稱就存檔時由 API 略過。</summary>
     [RelayCommand]
     private void AddDlc() => Dlcs.Add(new DlcRow());

@@ -316,9 +316,16 @@ namespace Library.Infrastructure.Migrations
                         .HasMaxLength(8)
                         .HasColumnType("nvarchar(8)");
 
+                    b.Property<int>("Discount")
+                        .HasColumnType("int");
+
                     b.Property<string>("Language")
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
+
+                    b.Property<decimal?>("ListPrice")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)");
 
                     b.Property<int>("Position")
                         .HasColumnType("int");

@@ -8,13 +8,16 @@ using Library.Application.Sources;
 namespace Library.Infrastructure.Sources;
 
 /// <summary>
-/// Steam 商店的來源：從網址取出 App ID，呼叫 Steam 的 appdetails API 抓回名稱、開發商、發行商、上架日、標籤、簡介。
+/// Steam 商店的來源：從網址取出 App ID，呼叫 Steam 的 appdetails API 抓回名稱、開發商、發行商、上架日、標籤、簡介、價格。
 /// </summary>
 /// <remarks>
 /// HttpClient 從建構子傳入，測試時可以換成裝了假 HttpMessageHandler 的版本。連線失敗的例外交給呼叫端處理。
 /// </remarks>
 public partial class SteamSource : IStoreSource
 {
+    // 價格用哪一區的商店計價（cc 參數）；不指定時 Steam 依連線的 IP 決定幣別
+    private const string Region = "tw";
+
     private readonly HttpClient _http;
 
     public SteamSource(HttpClient http) => _http = http;
@@ -58,18 +61,24 @@ public partial class SteamSource : IStoreSource
             ReleaseDate: ParseDate(en.ReleaseDate),
             CoverImageUrl: en.HeaderImage,
             Tags: zh.Genres?.Select(g => g.Description).Distinct().ToArray() ?? [],
-            Description: WebUtility.HtmlDecode(zh.ShortDescription)?.Trim() ?? "");
+            Description: WebUtility.HtmlDecode(zh.ShortDescription)?.Trim() ?? "",
+            Price: en.PriceOverview?.Final / 100m,
+            ListPrice: en.PriceOverview?.Initial / 100m,
+            Discount: en.PriceOverview?.DiscountPercent ?? 0,
+            Currency: en.PriceOverview?.Currency ?? "",
+            WorkType: "遊戲");
     }
 
     // 沒有這個語言的名稱時 Steam 會回傳英文名稱，和英文一樣就當作沒有翻譯
     private static string Translated(SteamApp? app, string english) =>
         app?.Name is { } name && name != english ? name : "";
 
-    private async Task<SteamApp?> GetAppAsync(string appId, string language, CancellationToken cancellationToken)
+    private async Task<SteamApp?> GetAppAsync(string appId, string language,
+        CancellationToken cancellationToken)
     {
         // 最外層的 key 是 App ID（{ "620": {...} }），每個遊戲不同，所以用 Dictionary 接
         var response = await _http.GetFromJsonAsync<Dictionary<string, SteamResponse>>(
-            $"api/appdetails?appids={appId}&l={language}", JsonOptions, cancellationToken);
+            $"api/appdetails?appids={appId}&l={language}&cc={Region}", JsonOptions, cancellationToken);
 
         // 格式錯誤的 App ID，Steam 會回傳 null
         if (response is null || !response.TryGetValue(appId, out var app))
@@ -107,9 +116,12 @@ public partial class SteamSource : IStoreSource
         SteamReleaseDate? ReleaseDate,
         string? HeaderImage,
         SteamGenre[]? Genres,
-        string? ShortDescription);
+        string? ShortDescription,
+        SteamPrice? PriceOverview);
 
     private record SteamGenre(string Description);
 
     private record SteamReleaseDate(string Date);
+
+    private record SteamPrice(string Currency, long Final, long Initial, int DiscountPercent);
 }

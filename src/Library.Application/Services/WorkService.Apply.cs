@@ -90,6 +90,8 @@ public partial class WorkService
                 Purchased = urls[i].Purchased,
                 Language = urls[i].Language,
                 Price = urls[i].Price,
+                ListPrice = urls[i].ListPrice,
+                Discount = urls[i].Discount,
                 Currency = urls[i].Currency?.Trim().ToUpperInvariant() ?? ""
             });
         }

@@ -46,10 +46,28 @@ public partial class MainViewModel
                 Description = info.Description;
 
             ReleaseDate = info.ReleaseDate?.ToDateTime(TimeOnly.MinValue) ?? ReleaseDate;
-            // 抓取用的網址就是這部作品的網址；清單裡已經有的不再加
+            // 抓取用的網址就是這部作品的網址：清單裡已經有就沿用那一列，沒有才新增；有價格就填進那一列
             var url = StoreUrl.Trim();
-            if (!Urls.Any(r => r.Url.Trim().Equals(url, StringComparison.OrdinalIgnoreCase)))
-                Urls.Add(new UrlRow { Url = url });
+            var row = Urls.FirstOrDefault(r => r.Url.Trim().Equals(url, StringComparison.OrdinalIgnoreCase));
+
+            if (row == null)
+            {
+                row = new UrlRow { Url = url };
+                Urls.Add(row);
+            }
+
+            if (info.Price is { } price)
+            {
+                row.PriceText = price.ToString();
+                row.ListPrice = info.ListPrice;
+                row.Discount = info.Discount;
+                row.Currency = info.Currency;
+            }
+
+            var type = WorkTypes.FirstOrDefault(w => w.Name == info.WorkType);
+            if (type != null)
+                WorkTypeId = type.Id;
+
             ErrorMessage = "";
 
             // 其他欄位已經填好了，封面另外下載，失敗也不影響
