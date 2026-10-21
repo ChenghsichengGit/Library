@@ -42,7 +42,6 @@ namespace Library.Infrastructure.Migrations
                     { 2, "動畫", 1 },
                     { 3, "影片", 2 },
                     { 4, "遊戲", 3 },
-                    { 5, "ASMR", 4 },
                     { 6, "其他", 99 }
                 });
 

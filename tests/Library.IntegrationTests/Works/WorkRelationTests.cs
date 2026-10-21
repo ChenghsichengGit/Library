@@ -122,13 +122,13 @@ public class WorkRelationTests(SqlServerFixture fixture) : WorkServiceTestBase(f
         Assert.Equal(["B"], (await GetWorkAsync(id))!.Tags);
     }
 
-    // 防：Dictionary 沒設不分大小寫，資料庫查得到 ASMR，但用 asmr 找不到而又新建一筆，撞上唯一索引
+    // 防：Dictionary 沒設不分大小寫，資料庫查得到 RPG，但用 rpg 找不到而又新建一筆，撞上唯一索引
     [Fact]
     public async Task CreateAsync_ExistingTagName_ReusesTag()
     {
         await CreateWorksAsync(
-            new SaveWorkRequest { TitleJa = "A", Tags = ["ASMR"], WorkTypeId = 1 },
-            new SaveWorkRequest { TitleJa = "B", Tags = ["asmr"], WorkTypeId = 1 });
+            new SaveWorkRequest { TitleJa = "A", Tags = ["RPG"], WorkTypeId = 1 },
+            new SaveWorkRequest { TitleJa = "B", Tags = ["rpg"], WorkTypeId = 1 });
 
         // Tags 表只能有一筆
         await using var verifyDb = CreateDbContext();

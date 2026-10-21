@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Library.IntegrationTests;
 
 /// <summary>
-/// WorkTypeService 的整合測試。種子資料：漫畫 0、動畫 1、影片 2、遊戲 3、ASMR 4、其他 99。
+/// WorkTypeService 的整合測試。種子資料：漫畫 0、動畫 1、影片 2、遊戲 3、其他 99。
 /// </summary>
 [Collection("SqlServer")]
 public class WorkTypeServiceTests(SqlServerFixture fixture) : DatabaseTestBase(fixture)
@@ -24,10 +24,10 @@ public class WorkTypeServiceTests(SqlServerFixture fixture) : DatabaseTestBase(f
 
         var result = await CreateService(db).GetAllAsync();
 
-        Assert.Equal(["漫畫", "動畫", "影片", "遊戲", "ASMR", "其他"], result.Select(t => t.Name));
+        Assert.Equal(["漫畫", "動畫", "影片", "遊戲", "其他"], result.Select(t => t.Name));
     }
 
-    // 防：SortOrder 少了 + 1，和 ASMR 同順序
+    // 防：SortOrder 少了 + 1，和遊戲同順序
     [Fact]
     public async Task CreateAsync_WithoutSortOrder_PlacesBeforeOther()
     {
@@ -36,7 +36,7 @@ public class WorkTypeServiceTests(SqlServerFixture fixture) : DatabaseTestBase(f
             var dto = await CreateService(db).CreateAsync(new SaveWorkTypeRequest { Name = " 同人誌 " });
 
             Assert.Equal("同人誌", dto.Name);
-            Assert.Equal(5, dto.SortOrder);
+            Assert.Equal(4, dto.SortOrder);
         }
 
         await using (var db = CreateDbContext())
@@ -47,14 +47,16 @@ public class WorkTypeServiceTests(SqlServerFixture fixture) : DatabaseTestBase(f
         }
     }
 
-    // 防：名稱重複沒擋；SQL Server 不分大小寫，asmr 和 ASMR 算重複
+    // 防：名稱重複沒擋；SQL Server 不分大小寫，galgame 和 Galgame 算重複
     [Fact]
     public async Task CreateAsync_DuplicateName_Throws()
     {
-        await using var db = CreateDbContext();
+        await using (var db = CreateDbContext())
+            await CreateService(db).CreateAsync(new SaveWorkTypeRequest { Name = "Galgame" });
 
-        await Assert.ThrowsAsync<WorkTypeConflictException>(() =>
-            CreateService(db).CreateAsync(new SaveWorkTypeRequest { Name = "asmr" }));
+        await using (var db = CreateDbContext())
+            await Assert.ThrowsAsync<WorkTypeConflictException>(() =>
+                CreateService(db).CreateAsync(new SaveWorkTypeRequest { Name = "galgame" }));
     }
 
     // 防：名稱重複的檢查沒有排除自己，名稱不變只改順序也被擋

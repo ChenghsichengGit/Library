@@ -297,12 +297,6 @@ namespace Library.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = 5,
-                            Name = "ASMR",
-                            SortOrder = 4
-                        },
-                        new
-                        {
                             Id = 6,
                             Name = "其他",
                             SortOrder = 99
