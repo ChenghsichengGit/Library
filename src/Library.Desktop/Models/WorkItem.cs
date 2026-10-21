@@ -50,7 +50,8 @@ public record WorkItem(
     public string PurchasedText => Purchased ? "✓" : "";
 
     /// <summary>
-    /// 表格的價格欄。有特價的網址取折扣最大的，都沒特價取最便宜的（同原版）；幣別不同時不換算，直接比數字。
+    /// 表格的價格欄：顯示目前最便宜的網址，價格相同時取折扣大的。
+    /// 不同幣別無法直接比較，有台幣價格（Steam、Microsoft Store）時只在台幣之間比。
     /// </summary>
     public string PriceText
     {
@@ -60,9 +61,11 @@ public record WorkItem(
             if (priced.Count == 0)
                 return "";
 
-            var shown = priced.Any(u => u.Discount > 0)
-                ? priced.MaxBy(u => u.Discount)!
-                : priced.MinBy(u => u.Price)!;
+            var twd = priced.Where(u => u.Currency == "TWD").ToList();
+            var shown = (twd.Count > 0 ? twd : priced)
+                .OrderBy(u => u.Price)
+                .ThenByDescending(u => u.Discount)
+                .First();
             return PriceFormat.WithDiscount(shown.Price!.Value, shown.Currency, shown.ListPrice, shown.Discount);
         }
     }

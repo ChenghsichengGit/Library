@@ -84,6 +84,30 @@ public partial class MainViewModel
         }
     }
 
+    /// <summary>「更新價格」：重新查詢所有 Steam、Microsoft Store 網址的價格，完成後重新讀取清單。</summary>
+    [RelayCommand]
+    private async Task RefreshPricesAsync()
+    {
+        StatusMessage = "更新價格中…";
+        try
+        {
+            var result = await _api.RefreshPricesAsync();
+            await LoadAsync();
+
+            // 編輯中的作品重新帶入表單，網址那一列才會顯示新的價格
+            if (EditingId is { } id)
+                SelectedWork = Works.FirstOrDefault(w => w.Id == id);
+
+            // LoadAsync 會把狀態改成「共 N 部作品」，所以結果要在最後才設定
+            StatusMessage = $"已更新 {result.Updated} 個網址的價格"
+                            + (result.NotUpdated > 0 ? $"，{result.NotUpdated} 個沒有更新（免費、下架或連線失敗）" : "");
+        }
+        catch (HttpRequestException)
+        {
+            StatusMessage = "更新價格失敗，請確認 Library.Api 有在執行";
+        }
+    }
+
     private static string KeepIfEmpty(string fetched, string current) =>
         fetched == "" ? current : fetched;
 }

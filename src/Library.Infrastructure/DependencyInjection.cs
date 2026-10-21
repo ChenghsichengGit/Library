@@ -29,12 +29,23 @@ public static class DependencyInjection
         // 介面要拿到同一個請求的同一個 DbContext；寫成 AddScoped<ILibraryDbContext, LibraryDbContext>() 會建出兩個
         services.AddScoped<ILibraryDbContext>(sp => sp.GetRequiredService<LibraryDbContext>());
 
-        // HttpClient 由 IHttpClientFactory 管理連線池
-        services.AddHttpClient<IStoreSource, SteamSource>(client =>
+        // 商店來源：HttpClient 由 IHttpClientFactory 管理連線池。
+        // 同一個物件同時提供作品資料（IStoreSource）與價格（IPriceSource），所以先登記具體類別，兩個介面再指向它
+        services.AddHttpClient<SteamSource>(client =>
         {
             client.BaseAddress = new Uri("https://store.steampowered.com/");
             client.Timeout = TimeSpan.FromSeconds(10);
         });
+        services.AddTransient<IStoreSource>(sp => sp.GetRequiredService<SteamSource>());
+        services.AddTransient<IPriceSource>(sp => sp.GetRequiredService<SteamSource>());
+
+        services.AddHttpClient<MicrosoftStoreSource>(client =>
+        {
+            client.BaseAddress = new Uri("https://displaycatalog.mp.microsoft.com/");
+            client.Timeout = TimeSpan.FromSeconds(10);
+        });
+        services.AddTransient<IStoreSource>(sp => sp.GetRequiredService<MicrosoftStoreSource>());
+        services.AddTransient<IPriceSource>(sp => sp.GetRequiredService<MicrosoftStoreSource>());
 
         // 下載任意網站的圖片：不設 BaseAddress；有些網站會擋掉沒有 User-Agent 的請求
         services.AddHttpClient<ICoverDownloader, HttpCoverDownloader>(client =>

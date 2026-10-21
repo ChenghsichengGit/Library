@@ -18,6 +18,7 @@ public class WorkQuery : IValidatableObject
 
     public bool? Purchased { get; set; }
 
+
     public int? WorkTypeId { get; set; }
 
     /// <summary>作者或社團的 Id，不分角色。</summary>
@@ -39,6 +40,9 @@ public class WorkQuery : IValidatableObject
 
     // 只看還有 DLC 沒買的作品。只有 true 才篩選：「DLC 全買了」沒有用途，沒有 DLC 的作品也說不清算哪邊
     public bool DlcUnbought { get; set; }
+
+    // 只看任一網址正在特價的作品
+    public bool OnSale { get; set; }
 
     // EnumDataType 擋下 ?sort=99 這種轉得過去但沒定義的值
     [EnumDataType(typeof(WorkSort))]

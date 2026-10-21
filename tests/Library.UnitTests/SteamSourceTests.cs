@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
+using Library.Application.Sources;
 using Library.Infrastructure.Sources;
 
 namespace Library.UnitTests;
@@ -229,5 +230,36 @@ public class SteamSourceTests
         Assert.Equal(0, result.Discount);
         Assert.Equal("", result.Currency);
         Assert.Equal("", result.Description);
+    }
+
+    // 防：免費遊戲的 data 是空陣列不是物件，整批解析失敗；查不到的遊戲丟出例外；原價和現價拿反；一次只查一個
+    [Fact]
+    public async Task FetchPricesAsync_SkipsFreeAndMissing()
+    {
+        var requests = new List<Uri>();
+        var source = CreateSource(_ => """
+            {
+              "620": { "success": true, "data": { "price_overview": { "currency": "TWD", "initial": 26900, "final": 13450, "discount_percent": 50 } } },
+              "570": { "success": true, "data": [] },
+              "1": { "success": false }
+            }
+            """, requests);
+
+        var prices = await source.FetchPricesAsync(["620", "570", "1"]);
+
+        var price = Assert.Single(prices);
+        Assert.Equal("620", price.Key);
+        Assert.Equal(new StorePrice(134.50m, 269m, 50, "TWD"), price.Value);
+        var query = Assert.Single(requests).Query;
+        Assert.Contains("appids=620,570,1", query);
+        Assert.Contains("cc=tw", query);
+    }
+
+    [Theory]
+    [InlineData("https://store.steampowered.com/app/620/Portal_2/", "620")]
+    [InlineData("https://www.xbox.com/zh-TW/games/store/x/9MW9469V91LM", null)]
+    public void GetPriceKey_OnlySteamUrls(string url, string? expected)
+    {
+        Assert.Equal(expected, new SteamSource(new HttpClient()).GetPriceKey(new Uri(url)));
     }
 }

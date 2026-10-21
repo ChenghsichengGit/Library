@@ -46,6 +46,7 @@ public partial class MainViewModel
 
     // 只看還有 DLC 沒買的作品
     [ObservableProperty] private bool _dlcUnbought;
+    [ObservableProperty] private bool _onSale;
 
     [ObservableProperty] private SortOption _selectedSort = AllSortOptions[0];
     [ObservableProperty] private bool _sortDescending = true;
@@ -113,6 +114,7 @@ public partial class MainViewModel
     partial void OnSelectedScoreFilterChanged(ScoreFilter value) => LoadCommand.Execute(null);
     partial void OnFilterWorkTypeIdChanged(int value) => LoadCommand.Execute(null);
     partial void OnDlcUnboughtChanged(bool value) => LoadCommand.Execute(null);
+    partial void OnOnSaleChanged(bool value) => LoadCommand.Execute(null);
     partial void OnSelectedSortChanged(SortOption value) => LoadCommand.Execute(null);
     partial void OnSortDescendingChanged(bool value) => LoadCommand.Execute(null);
     partial void OnTagMatchAnyChanged(bool value) => LoadCommand.Execute(null);

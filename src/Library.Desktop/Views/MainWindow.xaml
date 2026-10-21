@@ -35,6 +35,8 @@
                                Command="{Binding ManageCreatorsCommand}" />
                     <ui:Button Content="掃描重複" Icon="{ui:SymbolIcon DocumentSearch24}" Margin="8,0,0,0"
                                Command="{Binding ScanDuplicatesCommand}" />
+                    <ui:Button Content="更新價格" Icon="{ui:SymbolIcon Money24}" Margin="8,0,0,0"
+                               Command="{Binding RefreshPricesCommand}" />
                     <ui:Button Content="{Binding TrashButtonText}" Icon="{ui:SymbolIcon Delete24}" Margin="8,0,0,0"
                                Command="{Binding OpenTrashCommand}" />
                 </StackPanel>
@@ -61,11 +63,15 @@
                           DisplayMemberPath="Label" Width="130" Margin="0,0,8,4" />
                 <CheckBox Content="只看最愛" IsChecked="{Binding OnlyFavorite}" Margin="0,0,16,4" />
                 <CheckBox Content="DLC 沒買齊" IsChecked="{Binding DlcUnbought}" Margin="0,0,16,4" />
+                <CheckBox Content="特價中" IsChecked="{Binding OnSale}" Margin="0,0,16,4" />
 
-                <TextBlock Text="排序" VerticalAlignment="Center" Margin="0,0,6,4" />
-                <ComboBox ItemsSource="{Binding SortOptions}" SelectedItem="{Binding SelectedSort}"
-                          DisplayMemberPath="Label" Width="130" Margin="0,0,8,4" />
-                <CheckBox Content="降冪" IsChecked="{Binding SortDescending}" Margin="0,0,0,4" />
+                <!-- 排序的標籤、選單、降冪包成一組，換行時一起移動 -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                    <TextBlock Text="排序" VerticalAlignment="Center" Margin="0,0,6,0" />
+                    <ComboBox ItemsSource="{Binding SortOptions}" SelectedItem="{Binding SelectedSort}"
+                              DisplayMemberPath="Label" Width="130" Margin="0,0,8,0" />
+                    <CheckBox Content="降冪" IsChecked="{Binding SortDescending}" />
+                </StackPanel>
             </WrapPanel>
 
             <!-- 篩選某位作者／社團時顯示：名稱、網址、備註、取消篩選 -->
@@ -158,7 +164,7 @@
                             <ui:Button DockPanel.Dock="Right" Content="抓取" Icon="{ui:SymbolIcon ArrowDownload24}"
                                        Margin="6,0,0,0" Command="{Binding FetchCommand}" />
                             <ui:TextBox Text="{Binding StoreUrl, UpdateSourceTrigger=PropertyChanged}"
-                                        PlaceholderText="貼上 Steam 商品頁網址">
+                                        PlaceholderText="貼上網址">
                                 <ui:TextBox.InputBindings>
                                     <KeyBinding Key="Enter" Command="{Binding FetchCommand}" />
                                 </ui:TextBox.InputBindings>

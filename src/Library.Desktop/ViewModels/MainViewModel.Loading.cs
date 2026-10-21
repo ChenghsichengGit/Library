@@ -43,6 +43,7 @@ public partial class MainViewModel
                 CreatorId: FilterCreatorId == 0 ? null : FilterCreatorId,
                 SeriesId: FilterSeriesId == 0 ? null : FilterSeriesId,
                 DlcUnbought: DlcUnbought,
+                OnSale: OnSale,
                 Tags: TagFilters
                     .Where(t => t.IsSelected)
                     .Select(t => t.Name)

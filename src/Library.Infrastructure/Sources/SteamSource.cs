@@ -8,12 +8,13 @@ using Library.Application.Sources;
 namespace Library.Infrastructure.Sources;
 
 /// <summary>
-/// Steam 商店的來源：從網址取出 App ID，呼叫 Steam 的 appdetails API 抓回名稱、開發商、發行商、上架日、標籤、簡介、價格。
+/// Steam 商店的來源：從網址取出 App ID，呼叫 Steam 的 appdetails API 抓回名稱、開發商、發行商、上架日、標籤、簡介、價格；
+/// 也可以一次查詢多個遊戲的價格。
 /// </summary>
 /// <remarks>
 /// HttpClient 從建構子傳入，測試時可以換成裝了假 HttpMessageHandler 的版本。連線失敗的例外交給呼叫端處理。
 /// </remarks>
-public partial class SteamSource : IStoreSource
+public partial class SteamSource : IStoreSource, IPriceSource
 {
     // 價格用哪一區的商店計價（cc 參數）；不指定時 Steam 依連線的 IP 決定幣別
     private const string Region = "tw";
@@ -25,6 +26,8 @@ public partial class SteamSource : IStoreSource
     // /app/620/Portal_2/ → 620
     [GeneratedRegex(@"^/app/(\d+)")]
     private static partial Regex AppIdPattern();
+
+    // ── 抓取作品資料（IStoreSource） ──
 
     /// <summary>網域是 Steam 商店、路徑是 /app/數字 才處理。</summary>
     // 比對 Host 而不是整個網址的文字，evil.com/?steampowered 才不會通過
@@ -69,12 +72,44 @@ public partial class SteamSource : IStoreSource
             WorkType: "遊戲");
     }
 
-    // 沒有這個語言的名稱時 Steam 會回傳英文名稱，和英文一樣就當作沒有翻譯
-    private static string Translated(SteamApp? app, string english) =>
-        app?.Name is { } name && name != english ? name : "";
+    // ── 批次查詢價格（IPriceSource） ──
 
-    private async Task<SteamApp?> GetAppAsync(string appId, string language,
-        CancellationToken cancellationToken)
+    /// <summary>一次最多查 50 個 App ID。</summary>
+    public int BatchSize => 50;
+
+    /// <summary>Steam 商店的網址回傳 App ID，其他網址回傳 null。</summary>
+    public string? GetPriceKey(Uri url) =>
+        CanHandle(url) ? AppIdPattern().Match(url.AbsolutePath).Groups[1].Value : null;
+
+    /// <summary>一次查詢多個遊戲的價格；免費、未發售或查不到的不會出現在結果裡。</summary>
+    public async Task<IReadOnlyDictionary<string, StorePrice>> FetchPricesAsync(
+        IReadOnlyList<string> keys, CancellationToken cancellationToken = default)
+    {
+        // filters=price_overview 時才接受多個 appids；免費遊戲的 data 是空陣列不是物件，所以用 JsonElement 逐一判斷
+        var response = await _http.GetFromJsonAsync<Dictionary<string, JsonElement>>(
+            $"api/appdetails?appids={string.Join(',', keys)}&cc={Region}&filters=price_overview", cancellationToken);
+
+        var prices = new Dictionary<string, StorePrice>();
+        foreach (var (appId, app) in response ?? [])
+        {
+            if (app.GetProperty("success").GetBoolean()
+                && app.GetProperty("data") is { ValueKind: JsonValueKind.Object } data
+                && data.TryGetProperty("price_overview", out var price))
+            {
+                prices[appId] = new StorePrice(
+                    price.GetProperty("final").GetInt64() / 100m,
+                    price.GetProperty("initial").GetInt64() / 100m,
+                    price.GetProperty("discount_percent").GetInt32(),
+                    price.GetProperty("currency").GetString() ?? "");
+            }
+        }
+
+        return prices;
+    }
+
+    // ── 共用 ──
+
+    private async Task<SteamApp?> GetAppAsync(string appId, string language, CancellationToken cancellationToken)
     {
         // 最外層的 key 是 App ID（{ "620": {...} }），每個遊戲不同，所以用 Dictionary 接
         var response = await _http.GetFromJsonAsync<Dictionary<string, SteamResponse>>(
@@ -86,6 +121,10 @@ public partial class SteamSource : IStoreSource
 
         return app.Success ? app.Data : null;
     }
+
+    // 沒有這個語言的名稱時 Steam 會回傳英文名稱，和英文一樣就當作沒有翻譯
+    private static string Translated(SteamApp? app, string english) =>
+        app?.Name is { } name && name != english ? name : "";
 
     // 只採用完整的年月日；Q1 2027、Coming soon 是 null，不讓整個抓取失敗。即將推出的遊戲也可能有確定日期，所以不看 coming_soon
     private static DateOnly? ParseDate(SteamReleaseDate? releaseDate)
@@ -123,5 +162,6 @@ public partial class SteamSource : IStoreSource
 
     private record SteamReleaseDate(string Date);
 
+    // 金額的單位是「分」
     private record SteamPrice(string Currency, long Final, long Initial, int DiscountPercent);
 }

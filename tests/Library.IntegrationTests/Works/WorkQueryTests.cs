@@ -117,6 +117,34 @@ public class WorkQueryTests(SqlServerFixture fixture) : WorkServiceTestBase(fixt
         Assert.Equal(expected, result.Select(w => w.Title));
     }
 
+    // 防：篩選失效（回傳全部）、只看第一個網址、折扣的門檻寫錯（1% 也是特價）
+    [Fact]
+    public async Task GetWorksAsync_FiltersByOnSale()
+    {
+        await CreateWorksAsync(
+            new SaveWorkRequest
+            {
+                TitleZh = "第二個網址特價",
+                WorkTypeId = 1,
+                Urls =
+                [
+                    new SaveWorkUrlRequest { Url = "https://a.example.com", Price = 100 },
+                    new SaveWorkUrlRequest { Url = "https://b.example.com", Price = 99, ListPrice = 100, Discount = 1 }
+                ]
+            },
+            new SaveWorkRequest
+            {
+                TitleZh = "沒有特價",
+                WorkTypeId = 1,
+                Urls = [new SaveWorkUrlRequest { Url = "https://c.example.com", Price = 100 }]
+            },
+            new SaveWorkRequest { TitleZh = "沒有網址", WorkTypeId = 1 });
+
+        var result = await GetWorksAsync(new WorkQuery { OnSale = true });
+
+        Assert.Equal(["第二個網址特價"], result.Select(w => w.Title));
+    }
+
     // 防：篩選失效（回傳全部）、條件寫反；沒有網址的作品算未購買
     [Theory]
     [InlineData(true, new[] { "一買一沒買" })]

@@ -101,6 +101,13 @@ public class WorksApiClient
         return (await response.Content.ReadFromJsonAsync<EmptyTrashResult>())!.Removed;
     }
 
+    public async Task<PriceUpdateResult> RefreshPricesAsync()
+    {
+        var response = await _http.PostAsync("api/prices/refresh", null);
+        await EnsureSuccessAsync(response);
+        return (await response.Content.ReadFromJsonAsync<PriceUpdateResult>())!;
+    }
+
     // ── 商店查詢 ──
 
     /// <summary>
@@ -256,6 +263,8 @@ public class WorksApiClient
             parts.Add($"seriesId={seriesId}");
         if (query.DlcUnbought)
             parts.Add("dlcUnbought=True");
+        if (query.OnSale)
+            parts.Add("onSale=True");
 
         // 每個標籤各一個 tags=；預設是全部符合，只有「符合任一」才送 tagMode
         foreach (var tag in query.Tags)

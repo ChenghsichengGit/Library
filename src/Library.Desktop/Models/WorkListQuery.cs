@@ -13,6 +13,7 @@ public record WorkListQuery(
     int? CreatorId,
     int? SeriesId,
     bool DlcUnbought,
+    bool OnSale,
     List<string> Tags,
     bool TagAny,
     string Sort,

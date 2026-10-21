@@ -77,6 +77,9 @@ public partial class WorkService
         if (query.DlcUnbought)
             works = works.Where(w => w.Dlcs.Any(d => !d.Purchased));
 
+        if (query.OnSale)
+            works = works.Where(w => w.Urls.Any(u => u.Discount > 0));
+
         // 和存檔用同一套整理：清單去重複後，All 才能用「符合數 = 清單長度」判斷
         var tagNames = CleanNames(query.Tags);
         if (tagNames.Count > 0)
