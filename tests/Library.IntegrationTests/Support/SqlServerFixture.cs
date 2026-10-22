@@ -13,7 +13,7 @@ namespace Library.IntegrationTests.Support;
 /// </summary>
 /// <remarks>
 /// 啟動容器要十幾秒、從頭跑 Migration 每次一兩秒，所以都只做一次；每個測試開始前用 ResetAsync 清空資料。
-/// 密碼和 port 由 Testcontainers 自動產生，不會和開發用的 1433 衝突。
+/// port 由 Testcontainers 隨機分配，不會和開發用的 1433 衝突；密碼用它的預設值（容器只在測試期間存在）。
 /// </remarks>
 public class SqlServerFixture : IAsyncLifetime
 {

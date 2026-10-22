@@ -13,7 +13,7 @@ namespace Library.Desktop.ViewModels;
 /// </summary>
 /// <remarks>
 /// 依功能拆成幾個 partial 檔：這裡是表單與新增／儲存／刪除；Filters 工具列、Loading 讀取清單與選項、
-/// Lists 網址／DLC／系列建議、Cover 封面、Fetch 從商店抓取。
+/// Lists 網址／DLC／系列建議、Cover 封面、Fetch 從商店抓取與更新價格、Duplicates 重複提示、Trash 最近刪除。
 /// </remarks>
 public partial class MainViewModel : ObservableObject
 {

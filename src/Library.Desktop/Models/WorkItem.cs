@@ -70,7 +70,7 @@ public record WorkItem(
         }
     }
 
-    /// <summary>表格用「、」接成一行；表單編輯用換行（MainViewModel.AuthorsInput）。</summary>
+    /// <summary>表格用「、」接成一行。</summary>
     public string AuthorsText => string.Join("、", Authors);
 
     public string CirclesText => string.Join("、", Circles);

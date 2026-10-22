@@ -434,7 +434,7 @@
                         <ui:GridViewColumn Header="作品名" DisplayMemberBinding="{Binding Title}" Width="220" />
                         <ui:GridViewColumn Header="最愛" DisplayMemberBinding="{Binding FavoriteText}" Width="56" />
                         <ui:GridViewColumn Header="已購買" DisplayMemberBinding="{Binding PurchasedText}" Width="64" />
-                        <!-- 有特價時是「原價 → 現價（−折扣%）」；多個網址時取折扣最大的，都沒特價取最便宜的 -->
+                        <!-- 有特價時是「原價 → 現價（−折扣%）」；多個網址時取最便宜的（WorkItem.PriceText） -->
                         <ui:GridViewColumn Header="價格" DisplayMemberBinding="{Binding PriceText}" Width="200" />
                         <ui:GridViewColumn Header="類型" DisplayMemberBinding="{Binding WorkType}" Width="64" />
                         <ui:GridViewColumn Header="系列" DisplayMemberBinding="{Binding Series}" Width="100" />

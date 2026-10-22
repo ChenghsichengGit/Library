@@ -8,7 +8,7 @@ using Microsoft.Extensions.FileProviders;
 var builder = WebApplication.CreateBuilder(args);
 
 // ── 登記服務 ──
-// enum 在 JSON 裡用名稱（"ja"）而不是數字，Swagger 也會列出可用的值
+// enum 在 API 的 JSON 裡用名稱（"ja"）而不是數字
 builder.Services.AddControllers()
     .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(
         new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)));

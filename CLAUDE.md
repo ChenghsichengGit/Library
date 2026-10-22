@@ -2,7 +2,7 @@
 
 個人收藏庫的 C# 重寫版，作為 .NET 求職作品集。後端 ASP.NET Core Web API（分層架構），前端 WPF（MVVM），資料庫 SQL Server（Docker）。
 
-架構與流程說明在 `docs/`，開始工作前先看 `docs/README.md`。`docs/` 是使用者本機的學習文件，**不進 git**（已列在 `.gitignore`）：`.md` 是原稿，執行 `python docs/build.py` 會產生可以用瀏覽器直接打開、含 Mermaid 圖表的 `.html`（入口是 `docs/index.html`）。
+**換新對話時，先讀 `docs/handoff.md`**（目前的狀態、未完成的事）。架構、功能與工具的說明在 `docs/`，開始工作前先看 `docs/README.md`（目錄）、`docs/project/README.md`（進入點、資料夾地圖、HTTP API）與 `docs/tools/README.md`（工具總覽）。`docs/` 是使用者本機的學習文件，**不進 git**（已列在 `.gitignore`）：`.md` 是原稿，執行 `python docs/build.py` 會在 `docs/_site/` 產生可以用瀏覽器直接打開的 `.html`（入口是 `docs/_site/index.html`）。
 
 ## 合作方式
 
@@ -20,7 +20,7 @@
    - 方法內部只在不直覺的地方加一行，寫設計決定的「為什麼」。
    - 一看就懂的程式碼不加。基礎觀念、類比、逐步解說（Include、DI、IQueryable、null! 這類）一律寫在 `docs/`，不寫在程式碼裡。
    - 不加在 `Migrations/`（自動產生）。
-2. **文件**：更新 `docs/` 裡受影響的 `.md`（架構、流程圖、DI、資料庫、WPF、測試、指令）。使用者這次新問的問題，加進 `docs/faq.md`。改完執行 `python docs/build.py` 重新產生網頁。文件不進 git，所以不會出現在 commit 裡。
+2. **文件**：更新 `docs/` 裡受影響的 `.md`：功能的流程與實作寫在 `docs/project/` 對應的編號文件，用到新的工具或套件就更新或新增 `docs/tools/` 的文件，並同步 `project/README.md`（資料夾地圖、HTTP 端點）、`tools/README.md`（版本、重點 API）與 `project/skills.md`。內容保持精簡。使用者這次新問的問題，整合進對應文件的問答。內容一律對照程式碼或官方文件驗證，不憑印象寫。改完執行 `python docs/build.py` 重新產生網頁。文件不進 git，所以不會出現在 commit 裡。
 3. **驗證**：建置 0 錯誤 0 警告，`dotnet test` 全部通過。跑測試前確認 API 沒在執行（dll 被鎖住會跑到舊版本）。
 
 ## commit 訊息
@@ -50,7 +50,7 @@ dotnet ef migrations add 名稱 --project src/Library.Infrastructure --startup-p
 dotnet ef database update --project src/Library.Infrastructure --startup-project src/Library.Api
 ```
 
-完整清單見 `docs/commands.md`。
+完整清單見 `docs/tools/commands.md`。
 
 ## 進度
 
@@ -59,7 +59,7 @@ dotnet ef database update --project src/Library.Infrastructure --startup-project
 目標是和原本的 Node 版（`F:\tool\media-library`）功能一樣，規劃前先對照它的 `schema.sql`、`server.js`、`lib/scrapers.js`、`public/app.js`。功能的刪減由使用者決定；為了先放進作品集而延後的項目標成「暫緩」，之後再做，不要從清單刪掉。剩下的步驟：
 
 1. ~~作品欄位補齊：類型、標籤、系列、修改時間；WPF 依類型篩選~~（已完成）
-2. ~~UI 美化與效能~~（已完成：預設 SplitQuery、作品表格改用 ListView，換排序約 500 → 200 ms；導入 WPF UI（深色主題、`FluentWindow`、表格用 `ui:ListView`／`ui:GridView`），重新量測仍約 200 ms，剩下的慢原因不明、先不處理，見 `docs/wpf-mvvm.md`；主視窗版面整理：WPF UI 按鈕與圖示、篩選列 `WrapPanel`、標籤篩選可收合並顯示已選數量、表單分區且儲存／刪除固定在底部、表格最愛／已購買只顯示 ♥／✓；`d:DataContext`；類型管理視窗版面，共用樣式移到 `App.xaml`）
+2. ~~UI 美化與效能~~（已完成：預設 SplitQuery、作品表格改用 ListView，換排序約 500 → 200 ms；導入 WPF UI（深色主題、`FluentWindow`、表格用 `ui:ListView`／`ui:GridView`），重新量測仍約 200 ms，剩下的慢原因不明、先不處理，見 `docs/project/09-wpf.md`；主視窗版面整理：WPF UI 按鈕與圖示、篩選列 `WrapPanel`、標籤篩選可收合並顯示已選數量、表單分區且儲存／刪除固定在底部、表格最愛／已購買只顯示 ♥／✓；`d:DataContext`；類型管理視窗版面，共用樣式移到 `App.xaml`）
 3. ~~多網址與 DLC／追加內容~~（已完成：`WorkUrls` 一對多 + Cascade、`UrlNormalizer` 正規化後去重複、存檔整批取代、已購買改由網址推導（刪除 `Works.Purchased`）、`PATCH /api/works/{id}/urls/{position}/purchased`、enum 在 JSON 用名稱、WPF 表單的網址清單（`UrlRow`、`RelativeSource`）；DLC：`WorkDlcs`，名稱必填、不去重複、不影響已購買，「還有 DLC 沒買」篩選；預覽用 `DesignMainViewModel`）
 4. ~~封面：上傳、從商店抓~~（已完成：`ICoverStorage`／`LocalCoverStorage` 存在本機、`/covers` 靜態檔案；`POST /api/covers` 上傳、`POST /api/covers/download` 從網址下載（只允許 http/https，內網 SSRF 部署前處理）；用檔頭判斷格式、10MB 上限；換封面時刪掉沒人用的舊檔；WPF 選檔、拖放、Ctrl+V、抓取時帶入，上傳前縮到 900px；作者、社團、系列的封面移到第 5 步）
 5. ~~作者、社團、系列的管理~~（已完成：`Creators` 加網址、備註、封面，`Series` 加備註、封面；`PUT /api/creators/{id}`、`PUT /api/series/{id}` 改名（撞名 409）、`cover-choices` 從作品挑封面、沒設定時用最新作品的封面；換封面刪舊檔抽成 `CoverCleaner`，三張表都檢查；`?creatorId=`（不分角色）、`?seriesId=`、`GET /api/series?creatorId=`；WPF 工具列的作者／社團、系列篩選與資訊列（網址只開 http/https）、管理視窗 `CreatorSeriesWindow`；別名先不做）
